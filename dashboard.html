@@ -44,12 +44,12 @@
 
   <script>
     const REPOS = [
-      { name: 'Obsidian', repo: 'itenium-be/Bootcamp-AI-Obsidian', color: '#4a0080' },
-      { name: 'RoyalPurple', repo: 'itenium-be/Bootcamp-AI-RoyalPurple', color: '#7851a9' },
-      { name: 'Teal', repo: 'itenium-be/Bootcamp-AI-Teal', color: '#008080' },
-      { name: 'Emerald', repo: 'itenium-be/Bootcamp-AI-Emerald', color: '#50c878' },
-      { name: 'Crimson', repo: 'itenium-be/Bootcamp-AI-Crimson', color: '#dc143c' },
-      { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#191970' },
+      { name: 'Obsidian', repo: 'itenium-be/Bootcamp-AI-Obsidian', color: '#4a0080', logo: 'logos/Team-Obsidian.png' },
+      { name: 'RoyalPurple', repo: 'itenium-be/Bootcamp-AI-RoyalPurple', color: '#7851a9', logo: 'logos/Team-RoyalPurple.png' },
+      { name: 'Teal', repo: 'itenium-be/Bootcamp-AI-Teal', color: '#008080', logo: 'logos/Team-Teal.png' },
+      { name: 'Emerald', repo: 'itenium-be/Bootcamp-AI-Emerald', color: '#50c878', logo: 'logos/Team-Emerald.png' },
+      { name: 'Crimson', repo: 'itenium-be/Bootcamp-AI-Crimson', color: '#dc143c', logo: 'logos/Team-Crimson.png' },
+      { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#191970', logo: 'logos/Team-MidnightBlue.png' },
     ];
 
     // Commits at or before this SHA are prep work and should be excluded
@@ -240,7 +240,7 @@
           <div class="team-card">
             <div class="team-header">
               <div class="team-name-title">
-                <span class="team-color" style="background: ${team.color}"></span>
+                <img src="${team.logo}" alt="${team.name}" class="team-logo">
                 ${team.name}
               </div>
             </div>
@@ -259,7 +259,7 @@
         <div class="team-card">
           <div class="team-header">
             <div class="team-name-title">
-              <span class="team-color" style="background: ${team.color}"></span>
+              <img src="${team.logo}" alt="${team.name}" class="team-logo">
               <a href="https://github.com/${team.repo}" target="_blank" style="color: inherit; text-decoration: none;">${team.name}</a>
             </div>
             <div class="team-status">

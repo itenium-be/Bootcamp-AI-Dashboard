@@ -135,6 +135,13 @@ button:hover { border-color: var(--text-muted); }
   border-radius: 50%;
 }
 
+.team-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
 .team-status {
   display: flex;
   align-items: center;
