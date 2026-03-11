@@ -1,0 +1,80 @@
+services:
+  postgres-obsidian:
+    image: postgres:17
+    container_name: bootcamp-db-obsidian
+    environment:
+      POSTGRES_USER: skillforge
+      POSTGRES_PASSWORD: skillforge
+      POSTGRES_DB: skillforge
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-obsidian:/var/lib/postgresql/data
+
+  postgres-royalpurple:
+    image: postgres:17
+    container_name: bootcamp-db-royalpurple
+    environment:
+      POSTGRES_USER: skillforge
+      POSTGRES_PASSWORD: skillforge
+      POSTGRES_DB: skillforge
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata-royalpurple:/var/lib/postgresql/data
+
+  postgres-teal:
+    image: postgres:17
+    container_name: bootcamp-db-teal
+    environment:
+      POSTGRES_USER: skillforge
+      POSTGRES_PASSWORD: skillforge
+      POSTGRES_DB: skillforge
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata-teal:/var/lib/postgresql/data
+
+  postgres-emerald:
+    image: postgres:17
+    container_name: bootcamp-db-emerald
+    environment:
+      POSTGRES_USER: skillforge
+      POSTGRES_PASSWORD: skillforge
+      POSTGRES_DB: skillforge
+    ports:
+      - "5436:5432"
+    volumes:
+      - pgdata-emerald:/var/lib/postgresql/data
+
+  postgres-crimson:
+    image: postgres:17
+    container_name: bootcamp-db-crimson
+    environment:
+      POSTGRES_USER: skillforge
+      POSTGRES_PASSWORD: skillforge
+      POSTGRES_DB: skillforge
+    ports:
+      - "5437:5432"
+    volumes:
+      - pgdata-crimson:/var/lib/postgresql/data
+
+  postgres-midnightblue:
+    image: postgres:17
+    container_name: bootcamp-db-midnightblue
+    environment:
+      POSTGRES_USER: skillforge
+      POSTGRES_PASSWORD: skillforge
+      POSTGRES_DB: skillforge
+    ports:
+      - "5438:5432"
+    volumes:
+      - pgdata-midnightblue:/var/lib/postgresql/data
+
+volumes:
+  pgdata-obsidian:
+  pgdata-royalpurple:
+  pgdata-teal:
+  pgdata-emerald:
+  pgdata-crimson:
+  pgdata-midnightblue:
