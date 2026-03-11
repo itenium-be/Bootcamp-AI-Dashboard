@@ -52,6 +52,9 @@
       { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#191970' },
     ];
 
+    // Commits at or before this SHA are prep work and should be excluded
+    const PREP_COMMIT_SHA = 'ce65285b7f0e710d2869acbacb9e53c3924cd0f7';
+
     const REFRESH_INTERVAL = 120000; // 2 minutes
     let countdownInterval;
     let nextRefresh;
@@ -99,12 +102,16 @@
       const { repo } = team;
 
       try {
-        const [commits, issues, pulls, workflows] = await Promise.all([
-          fetchGitHub(`/repos/${repo}/commits?per_page=5`),
+        const [allCommits, issues, pulls, workflows] = await Promise.all([
+          fetchGitHub(`/repos/${repo}/commits?per_page=50`),
           fetchGitHub(`/repos/${repo}/issues?state=all&per_page=100`),
           fetchGitHub(`/repos/${repo}/pulls?state=all&per_page=100`),
           fetchGitHub(`/repos/${repo}/actions/runs?per_page=1`),
         ]);
+
+        // Filter out prep commits (stop at PREP_COMMIT_SHA)
+        const prepIndex = allCommits.findIndex(c => c.sha.startsWith(PREP_COMMIT_SHA));
+        const commits = prepIndex === -1 ? allCommits : allCommits.slice(0, prepIndex);
 
         // Fetch commit stats for each commit (lines added/removed)
         const commitsWithStats = await Promise.all(
