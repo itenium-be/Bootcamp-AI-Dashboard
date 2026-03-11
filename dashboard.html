@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bootcamp AI Dashboard</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+      --link: #58a6ff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    h1 { font-size: 1.5rem; }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    button {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+
+    button:hover { border-color: var(--text-muted); }
+
+    .status-indicator {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .leaderboard {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .leaderboard h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      color: var(--text-muted);
+    }
+
+    .leaderboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .leaderboard-category {
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .leaderboard-category h3 {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      font-size: 0.875rem;
+    }
+
+    .leaderboard-item .team-name { font-weight: 500; }
+    .leaderboard-item .score { color: var(--text-muted); }
+    .leaderboard-item:first-child .score { color: var(--success); font-weight: 600; }
+
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 16px;
+    }
+
+    .team-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .team-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .team-name-title {
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .team-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .team-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.875rem;
+    }
+
+    .build-status {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .build-status.success { color: var(--success); }
+    .build-status.failure { color: var(--danger); }
+    .build-status.pending { color: var(--warning); }
+
+    .last-push { color: var(--text-muted); }
+    .last-push.recent { color: var(--success); }
+    .last-push.stale { color: var(--warning); }
+    .last-push.stuck { color: var(--danger); }
+
+    .team-content { padding: 16px; }
+
+    .section {
+      margin-bottom: 16px;
+    }
+
+    .section:last-child { margin-bottom: 0; }
+
+    .section-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .commit-list { list-style: none; }
+
+    .commit-item {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+
+    .commit-item:last-child { border-bottom: none; }
+
+    .commit-message {
+      color: var(--text);
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .commit-meta {
+      display: flex;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .commit-stats {
+      display: flex;
+      gap: 8px;
+    }
+
+    .additions { color: var(--success); }
+    .deletions { color: var(--danger); }
+
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      font-size: 0.875rem;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-label { color: var(--text-muted); }
+
+    .pr-list, .issue-list { list-style: none; }
+
+    .pr-item, .issue-item {
+      padding: 4px 0;
+      font-size: 0.875rem;
+    }
+
+    .pr-item a, .issue-item a {
+      color: var(--link);
+      text-decoration: none;
+    }
+
+    .pr-item a:hover, .issue-item a:hover { text-decoration: underline; }
+
+    .token-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .token-modal.hidden { display: none; }
+
+    .token-dialog {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .token-dialog h2 {
+      margin-bottom: 16px;
+    }
+
+    .token-dialog p {
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    .token-dialog input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.875rem;
+      margin-bottom: 16px;
+    }
+
+    .token-dialog .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn-primary {
+      background: var(--success);
+      border-color: var(--success);
+      color: #000;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    .error {
+      background: rgba(248, 81, 73, 0.1);
+      border: 1px solid var(--danger);
+      border-radius: 6px;
+      padding: 12px;
+      color: var(--danger);
+      font-size: 0.875rem;
+    }
+
+    .refresh-countdown {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bootcamp AI Dashboard</h1>
+    <div class="controls">
+      <span class="refresh-countdown" id="countdown"></span>
+      <button onclick="refresh()">Refresh Now</button>
+      <button onclick="showTokenModal()">Set Token</button>
+    </div>
+  </header>
+
+  <div class="leaderboard" id="leaderboard">
+    <h2>Leaderboard</h2>
+    <div class="leaderboard-grid" id="leaderboard-grid"></div>
+  </div>
+
+  <div class="teams-grid" id="teams-grid">
+    <div class="loading">Loading...</div>
+  </div>
+
+  <div class="token-modal hidden" id="token-modal">
+    <div class="token-dialog">
+      <h2>GitHub Token</h2>
+      <p>
+        Enter a GitHub Personal Access Token to avoid rate limits.
+        Create one at <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link)">github.com/settings/tokens</a>
+        with <code>repo</code> scope (or <code>public_repo</code> for public repos only).
+      </p>
+      <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      <div class="buttons">
+        <button onclick="hideTokenModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveToken()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const REPOS = [
+      { name: 'Obsidian', repo: 'itenium-be/Bootcamp-AI-Obsidian', color: '#4a0080' },
+      { name: 'RoyalPurple', repo: 'itenium-be/Bootcamp-AI-RoyalPurple', color: '#7851a9' },
+      { name: 'Teal', repo: 'itenium-be/Bootcamp-AI-Teal', color: '#008080' },
+      { name: 'Emerald', repo: 'itenium-be/Bootcamp-AI-Emerald', color: '#50c878' },
+      { name: 'Crimson', repo: 'itenium-be/Bootcamp-AI-Crimson', color: '#dc143c' },
+      { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#191970' },
+    ];
+
+    const REFRESH_INTERVAL = 120000; // 2 minutes
+    let countdownInterval;
+    let nextRefresh;
+
+    function getToken() {
+      return localStorage.getItem('github_token') || '';
+    }
+
+    function showTokenModal() {
+      document.getElementById('token-modal').classList.remove('hidden');
+      document.getElementById('token-input').value = getToken();
+    }
+
+    function hideTokenModal() {
+      document.getElementById('token-modal').classList.add('hidden');
+    }
+
+    function saveToken() {
+      const token = document.getElementById('token-input').value.trim();
+      if (token) {
+        localStorage.setItem('github_token', token);
+      } else {
+        localStorage.removeItem('github_token');
+      }
+      hideTokenModal();
+      refresh();
+    }
+
+    async function fetchGitHub(endpoint) {
+      const token = getToken();
+      const headers = {
+        'Accept': 'application/vnd.github.v3+json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`https://api.github.com${endpoint}`, { headers });
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function fetchTeamData(team) {
+      const { repo } = team;
+
+      try {
+        const [commits, issues, pulls, workflows] = await Promise.all([
+          fetchGitHub(`/repos/${repo}/commits?per_page=5`),
+          fetchGitHub(`/repos/${repo}/issues?state=all&per_page=100`),
+          fetchGitHub(`/repos/${repo}/pulls?state=all&per_page=100`),
+          fetchGitHub(`/repos/${repo}/actions/runs?per_page=1`),
+        ]);
+
+        // Fetch commit stats for each commit (lines added/removed)
+        const commitsWithStats = await Promise.all(
+          commits.slice(0, 3).map(async (commit) => {
+            try {
+              const details = await fetchGitHub(`/repos/${repo}/commits/${commit.sha}`);
+              return { ...commit, stats: details.stats };
+            } catch {
+              return { ...commit, stats: null };
+            }
+          })
+        );
+
+        const openIssues = issues.filter(i => i.state === 'open' && !i.pull_request);
+        const closedIssues = issues.filter(i => i.state === 'closed' && !i.pull_request);
+        const openPRs = pulls.filter(p => p.state === 'open');
+        const mergedPRs = pulls.filter(p => p.merged_at);
+
+        const lastPush = commits[0]?.commit?.author?.date;
+        const buildStatus = workflows.workflow_runs?.[0]?.conclusion ||
+                           workflows.workflow_runs?.[0]?.status ||
+                           'unknown';
+
+        return {
+          ...team,
+          commits: commitsWithStats,
+          allCommits: commits,
+          openIssues,
+          closedIssues,
+          openPRs,
+          mergedPRs,
+          lastPush,
+          buildStatus,
+          totalCommits: commits.length,
+          totalLinesAdded: commitsWithStats.reduce((sum, c) => sum + (c.stats?.additions || 0), 0),
+          totalLinesDeleted: commitsWithStats.reduce((sum, c) => sum + (c.stats?.deletions || 0), 0),
+          error: null,
+        };
+      } catch (error) {
+        return {
+          ...team,
+          error: error.message,
+        };
+      }
+    }
+
+    function getTimeAgo(dateString) {
+      if (!dateString) return 'Never';
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
+    }
+
+    function getTimeAgoClass(dateString) {
+      if (!dateString) return 'stuck';
+      const diffMs = new Date() - new Date(dateString);
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 15) return 'recent';
+      if (diffMins < 60) return 'stale';
+      return 'stuck';
+    }
+
+    function getBuildStatusClass(status) {
+      if (status === 'success') return 'success';
+      if (status === 'failure') return 'failure';
+      return 'pending';
+    }
+
+    function getBuildStatusIcon(status) {
+      if (status === 'success') return '✓';
+      if (status === 'failure') return '✗';
+      if (status === 'in_progress' || status === 'queued') return '○';
+      return '?';
+    }
+
+    function renderLeaderboard(teamsData) {
+      const validTeams = teamsData.filter(t => !t.error);
+
+      const categories = [
+        {
+          title: 'Total Commits',
+          getData: (t) => t.allCommits?.length || 0,
+        },
+        {
+          title: 'Lines Added',
+          getData: (t) => t.totalLinesAdded || 0,
+        },
+        {
+          title: 'Issues Closed',
+          getData: (t) => t.closedIssues?.length || 0,
+        },
+        {
+          title: 'PRs Merged',
+          getData: (t) => t.mergedPRs?.length || 0,
+        },
+      ];
+
+      const grid = document.getElementById('leaderboard-grid');
+      grid.innerHTML = categories.map(cat => {
+        const sorted = [...validTeams].sort((a, b) => cat.getData(b) - cat.getData(a));
+        return `
+          <div class="leaderboard-category">
+            <h3>${cat.title}</h3>
+            ${sorted.map(t => `
+              <div class="leaderboard-item">
+                <span class="team-name" style="color: ${t.color}">${t.name}</span>
+                <span class="score">${cat.getData(t)}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTeamCard(team) {
+      if (team.error) {
+        return `
+          <div class="team-card">
+            <div class="team-header">
+              <div class="team-name-title">
+                <span class="team-color" style="background: ${team.color}"></span>
+                ${team.name}
+              </div>
+            </div>
+            <div class="team-content">
+              <div class="error">${team.error}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      const buildClass = getBuildStatusClass(team.buildStatus);
+      const buildIcon = getBuildStatusIcon(team.buildStatus);
+      const lastPushClass = getTimeAgoClass(team.lastPush);
+
+      return `
+        <div class="team-card">
+          <div class="team-header">
+            <div class="team-name-title">
+              <span class="team-color" style="background: ${team.color}"></span>
+              <a href="https://github.com/${team.repo}" target="_blank" style="color: inherit; text-decoration: none;">${team.name}</a>
+            </div>
+            <div class="team-status">
+              <span class="build-status ${buildClass}">${buildIcon} ${team.buildStatus}</span>
+              <span class="last-push ${lastPushClass}">${getTimeAgo(team.lastPush)}</span>
+            </div>
+          </div>
+          <div class="team-content">
+            <div class="section">
+              <div class="section-title">Recent Commits</div>
+              <ul class="commit-list">
+                ${team.commits.map(c => `
+                  <li class="commit-item">
+                    <div class="commit-message">${escapeHtml(c.commit.message.split('\n')[0])}</div>
+                    <div class="commit-meta">
+                      <span class="author">${c.commit.author.name}</span>
+                      <span class="time">${getTimeAgo(c.commit.author.date)}</span>
+                      ${c.stats ? `
+                        <span class="commit-stats">
+                          <span class="additions">+${c.stats.additions}</span>
+                          <span class="deletions">-${c.stats.deletions}</span>
+                        </span>
+                      ` : ''}
+                    </div>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+
+            <div class="section">
+              <div class="stats-row">
+                <div class="stat">
+                  <span class="stat-label">Issues:</span>
+                  <span>${team.openIssues.length} open, ${team.closedIssues.length} closed</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">PRs:</span>
+                  <span>${team.openPRs.length} open, ${team.mergedPRs.length} merged</span>
+                </div>
+              </div>
+            </div>
+
+            ${team.openPRs.length > 0 ? `
+              <div class="section">
+                <div class="section-title">Open PRs</div>
+                <ul class="pr-list">
+                  ${team.openPRs.slice(0, 3).map(pr => `
+                    <li class="pr-item">
+                      <a href="${pr.html_url}" target="_blank">#${pr.number}: ${escapeHtml(pr.title)}</a>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${team.openIssues.length > 0 ? `
+              <div class="section">
+                <div class="section-title">Open Issues</div>
+                <ul class="issue-list">
+                  ${team.openIssues.slice(0, 3).map(issue => `
+                    <li class="issue-item">
+                      <a href="${issue.html_url}" target="_blank">#${issue.number}: ${escapeHtml(issue.title)}</a>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function startCountdown() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      nextRefresh = Date.now() + REFRESH_INTERVAL;
+
+      countdownInterval = setInterval(() => {
+        const remaining = Math.max(0, nextRefresh - Date.now());
+        const secs = Math.ceil(remaining / 1000);
+        document.getElementById('countdown').textContent = `Refresh in ${secs}s`;
+      }, 1000);
+    }
+
+    async function refresh() {
+      const grid = document.getElementById('teams-grid');
+      grid.innerHTML = '<div class="loading">Loading...</div>';
+
+      const teamsData = await Promise.all(REPOS.map(fetchTeamData));
+
+      renderLeaderboard(teamsData);
+      grid.innerHTML = teamsData.map(renderTeamCard).join('');
+
+      startCountdown();
+    }
+
+    // Initial load
+    if (!getToken()) {
+      showTokenModal();
+    }
+    refresh();
+    setInterval(refresh, REFRESH_INTERVAL);
+  </script>
+</body>
+</html>
