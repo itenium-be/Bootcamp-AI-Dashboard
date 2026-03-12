@@ -10,7 +10,10 @@ const REPOS = [
   { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#6366f1', logo: 'logos/Team-MidnightBlue.png', frontendPort: 5185 },
 ];
 
-const PREP_COMMIT_SHA = '731e4ad50e34e6587258a6a67ceeb895e10b5366';
+// const PREP_COMMIT_SHA = '731e4ad50e34e6587258a6a67ceeb895e10b5366';
+const PREP_COMMIT_SHA = 'a5211f773b7917e5407fae76a5b5c77aa17bbb9a';
+
+import JSZip from 'jszip';
 
 async function fetchGitHub(endpoint: string) {
   const headers: Record<string, string> = {
@@ -92,6 +95,55 @@ async function fetchTokenUsage() {
   }
 }
 
+async function fetchTestResults(repo: string, runId: number) {
+  try {
+    const artifacts = await fetchGitHub(`/repos/${repo}/actions/runs/${runId}/artifacts`);
+    const results: { backend: any; frontend: { unit: any; e2e: any } } = {
+      backend: null,
+      frontend: { unit: null, e2e: null }
+    };
+
+    for (const artifact of artifacts.artifacts || []) {
+      if (artifact.name === 'backend-test-results' || artifact.name === 'frontend-test-results') {
+        try {
+          const headers: Record<string, string> = {
+            'Accept': 'application/vnd.github.v3+json',
+          };
+          if (GITHUB_TOKEN) {
+            headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
+          }
+
+          const response = await fetch(
+            `https://api.github.com/repos/${repo}/actions/artifacts/${artifact.id}/zip`,
+            { headers }
+          );
+
+          if (response.ok) {
+            const buffer = await response.arrayBuffer();
+            const zip = await JSZip.loadAsync(buffer);
+
+            if (artifact.name === 'backend-test-results') {
+              const file = zip.file('test-results.json');
+              if (file) results.backend = JSON.parse(await file.async('string'));
+            } else {
+              const unitFile = zip.file('unit-test-results.json');
+              const e2eFile = zip.file('e2e-test-results.json');
+              if (unitFile) results.frontend.unit = JSON.parse(await unitFile.async('string'));
+              if (e2eFile) results.frontend.e2e = JSON.parse(await e2eFile.async('string'));
+            }
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch artifact ${artifact.name}:`, e);
+        }
+      }
+    }
+    return results;
+  } catch (e) {
+    console.warn('Failed to fetch test results:', e);
+    return { backend: null, frontend: { unit: null, e2e: null } };
+  }
+}
+
 async function fetchTeamData(team: typeof REPOS[0]) {
   const { repo } = team;
 
@@ -107,41 +159,70 @@ async function fetchTeamData(team: typeof REPOS[0]) {
     const prepIndex = allCommits.findIndex((c: any) => c.sha.startsWith(PREP_COMMIT_SHA));
     const commits = prepIndex === -1 ? allCommits : allCommits.slice(0, prepIndex);
 
-    // Fetch commit stats for recent commits
-    const commitsWithStats = await Promise.all(
+    // Fetch commit stats for recent commits (top 3)
+    const recentCommits = await Promise.all(
       commits.slice(0, 3).map(async (commit: any) => {
         try {
           const details = await fetchGitHub(`/repos/${repo}/commits/${commit.sha}`);
-          return { ...commit, stats: details.stats };
+          return {
+            message: commit.commit?.message?.split('\n')[0] || '',
+            author: commit.commit?.author?.name || commit.author?.login || 'Unknown',
+            authorHandle: commit.author?.login || commit.commit?.author?.name || 'Unknown',
+            date: commit.commit?.author?.date,
+            additions: details.stats?.additions || 0,
+            deletions: details.stats?.deletions || 0,
+          };
         } catch {
-          return { ...commit, stats: null };
+          return {
+            message: commit.commit?.message?.split('\n')[0] || '',
+            author: commit.commit?.author?.name || 'Unknown',
+            authorHandle: commit.author?.login || 'Unknown',
+            date: commit.commit?.author?.date,
+            additions: 0,
+            deletions: 0,
+          };
         }
       })
     );
 
-    const openIssues = issues.filter((i: any) => i.state === 'open' && !i.pull_request);
-    const closedIssues = issues.filter((i: any) => i.state === 'closed' && !i.pull_request);
-    const openPRs = pulls.filter((p: any) => p.state === 'open');
-    const mergedPRs = pulls.filter((p: any) => p.merged_at);
+    // Minimal commit data for Hall of Fame (all commits)
+    const allCommitsMinimal = commits.map((c: any) => ({
+      author: c.commit?.author?.name || c.author?.login || 'Unknown',
+      authorHandle: c.author?.login || c.commit?.author?.name || 'Unknown',
+      date: c.commit?.author?.date,
+    }));
+
+    const openIssuesAll = issues.filter((i: any) => i.state === 'open' && !i.pull_request);
+    const closedIssuesAll = issues.filter((i: any) => i.state === 'closed' && !i.pull_request);
+    const openPRsAll = pulls.filter((p: any) => p.state === 'open');
+    const mergedPRsAll = pulls.filter((p: any) => p.merged_at);
 
     const lastPush = commits[0]?.commit?.author?.date;
     const buildStatus = workflows.workflow_runs?.[0]?.conclusion ||
                         workflows.workflow_runs?.[0]?.status ||
                         'unknown';
 
+    // Fetch test results from artifacts
+    const runId = workflows.workflow_runs?.[0]?.id;
+    const testResults = runId ? await fetchTestResults(repo, runId) : null;
+
     return {
       ...team,
-      commits: commitsWithStats,
-      allCommits: commits,
-      openIssues,
-      closedIssues,
-      openPRs,
-      mergedPRs,
+      commits: recentCommits,
+      allCommits: allCommitsMinimal,
+      openIssues: openIssuesAll.slice(0, 3).map((i: any) => ({ number: i.number, title: i.title, url: i.html_url })),
+      openIssuesCount: openIssuesAll.length,
+      closedIssuesCount: closedIssuesAll.length,
+      openPRs: openPRsAll.slice(0, 3).map((p: any) => ({ number: p.number, title: p.title, url: p.html_url })),
+      openPRsCount: openPRsAll.length,
+      mergedPRs: mergedPRsAll.map((p: any) => ({ author: p.user?.login || 'Unknown' })),
+      mergedPRsCount: mergedPRsAll.length,
       lastPush,
       buildStatus,
+      testResults,
       totalCommits: commits.length,
-      totalLinesAdded: commitsWithStats.reduce((sum: number, c: any) => sum + (c.stats?.additions || 0), 0),
-      totalLinesDeleted: commitsWithStats.reduce((sum: number, c: any) => sum + (c.stats?.deletions || 0), 0),
+      totalLinesAdded: recentCommits.reduce((sum, c) => sum + c.additions, 0),
+      totalLinesDeleted: recentCommits.reduce((sum, c) => sum + c.deletions, 0),
       error: null,
     };
   } catch (error: any) {

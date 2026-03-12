@@ -2,6 +2,8 @@ FROM oven/bun:1
 
 WORKDIR /app
 
+RUN bun add jszip
+
 COPY server.ts .
 COPY index.html .
 COPY styles.css .

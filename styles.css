@@ -684,6 +684,11 @@ button:hover { border-color: var(--text-muted); }
     width: 100%;
   }
 
+  .server-address,
+  .team-names-btn {
+    display: none;
+  }
+
   h1 {
     font-size: 1.25rem;
   }
