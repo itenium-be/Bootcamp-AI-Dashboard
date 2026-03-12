@@ -519,13 +519,14 @@
         return `
           <div class="leaderboard-category" ${bgStyle}>
             <h3>${cat.title}</h3>
-            ${sorted.map(t => {
+            ${sorted.map((t, idx) => {
               const actualTeam = getActualTeam(t.name);
               return `
-                <div class="leaderboard-item">
-                  <span class="team-name" style="color: ${t.color}">
-                    ${actualTeam ? `${actualTeam.name} <span class="color-name">(${t.name})</span>` : t.name}
-                  </span>
+                <div class="leaderboard-item ${idx === 0 ? 'leader' : ''}">
+                  <div class="leaderboard-names">
+                    ${actualTeam ? `<span class="leaderboard-actual">${actualTeam.name}</span>` : ''}
+                    <span class="leaderboard-color" style="border-color: ${t.color}; color: ${t.color}">${t.name}</span>
+                  </div>
                   <span class="score">${cat.getData(t)}</span>
                 </div>
               `;
