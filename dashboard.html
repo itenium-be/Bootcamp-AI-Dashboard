@@ -76,47 +76,49 @@
     ];
 
     const GITHUB_TO_NAME = {
-      // Obsidian
-      'laoujin': 'Wouter Van Schandevijl',
       'CtrlAltSell': 'Willem Meylemans',
       'Iggy-LetItSnow': 'Igor Romy',
       'TimoVersonnen': 'Timo Versonnen',
       'Runekid': 'Onur Bugdayci',
       'JochemVH1': 'Jochem Van Hespen',
-      // RoyalPurple
       'borosseel': 'Bo Rosseel',
       'joriswijnant-ctrl': 'Joris Wijnant',
       'Brauwer': 'Thomas De Brauwer',
       'Mikedonna': 'Michael Dumortier',
       'TimRanson': 'Tim Ranson',
       'TomNok': 'Tom Marroyen',
-      // Teal
       'Stevenrobijns': 'Steven Robijns',
       'bossepierreai': 'Pierre Bossé',
       'Ninarchive': 'Nina Van Hoof',
       'bertforge': 'Bert Maes',
       'TyaraSchetgens': 'Tyara Schetgens',
-      // Emerald
       'GitHired': 'Jelle Muijzelaar',
       'Bvervaele': 'Bert Vervaele',
       'YannickManfroy': 'Yannick Manfroy',
       'BernelliG': 'Bernard Giorgino',
       'remcoverbruggen-itenium': 'Remco Verbruggen',
       'GClaeskens1978': 'Gert Claeskens',
-      // Crimson
       'heleendemeue': 'Heleen de Meue',
       'Jonathanrasquin': 'Jonathan Rasquin',
       'dsverdlo': 'David Sverdlov',
       'JelleMaes': 'Jelle Maes',
       'Plekker': 'Bram De Plekker',
-      // MidnightBlue
       'A-Ryckeboer': 'Alexander Ryckeboer',
       'NicolasHub': 'Nicolas Legrand',
       'JoachimDhondtItenium': 'Joachim D\'hondt',
       'jvanloock': 'Jos Van Loock',
       'Tomm-commits': 'Tom Mennes',
-      // POs
       'michael-itenium': 'Michael Branders',
+      'laoujin': 'Wouter Van Schandevijl',
+    };
+
+    const TEAM_MEMBERS = {
+      'Obsidian': ['Willem Meylemans', 'Igor Romy', 'Timo Versonnen', 'Onur Bugdayci', 'Jochem Van Hespen'],
+      'RoyalPurple': ['Bo Rosseel', 'Joris Wijnant', 'Thomas De Brauwer', 'Michael Dumortier', 'Tim Ranson', 'Tom Marroyen'],
+      'Teal': ['Steven Robijns', 'Pierre Bossé', 'Nina Van Hoof', 'Bert Maes', 'Tyara Schetgens'],
+      'Emerald': ['Jelle Muijzelaar', 'Bert Vervaele', 'Yannick Manfroy', 'Bernard Giorgino', 'Remco Verbruggen', 'Gert Claeskens'],
+      'Crimson': ['Heleen de Meue', 'Jonathan Rasquin', 'David Sverdlov', 'Jelle Maes', 'Bram De Plekker'],
+      'MidnightBlue': ['Alexander Ryckeboer', 'Nicolas Legrand', 'Joachim D\'hondt', 'Jos Van Loock', 'Tom Mennes'],
     };
 
     const ACTUAL_TEAMS = [
@@ -644,12 +646,16 @@
               </div>
             ` : ''}
           </div>
-          ${actualTeam ? `
-            <div class="team-footer" style="height: 100%">
+          <div class="team-footer" style="height: 100%">
+            ${actualTeam ? `
               <div class="team-tagline">${actualTeam.tagline}</div>
               <div class="team-description">${actualTeam.description}</div>
+            ` : ''}
+            <div class="team-members">
+              <span class="members-label">Team:</span>
+              ${(TEAM_MEMBERS[team.name] || []).join(', ')}
             </div>
-          ` : ''}
+          </div>
         </div>
       `;
     }

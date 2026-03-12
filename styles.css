@@ -626,6 +626,20 @@ button:hover { border-color: var(--text-muted); }
   line-height: 1.4;
 }
 
+.team-members {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.members-label {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 /* Hall of Fame color team (fallback) */
 .award-team-color {
   font-size: 0.75rem;
