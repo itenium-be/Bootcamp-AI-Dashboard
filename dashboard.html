@@ -18,8 +18,13 @@
     </div>
   </header>
 
+  <div class="topboard" id="topboard">
+    <h2>Hall of Fame</h2>
+    <div class="topboard-grid" id="topboard-grid"></div>
+  </div>
+
   <div class="leaderboard" id="leaderboard">
-    <h2>Leaderboard</h2>
+    <h2>Team Leaderboard</h2>
     <div class="leaderboard-grid" id="leaderboard-grid"></div>
   </div>
 
@@ -257,6 +262,86 @@
       `;
     }
 
+    function renderTopboard(teamsData) {
+      const validTeams = teamsData.filter(t => !t.error);
+
+      // Collect all commits with stats across teams
+      const allCommitsWithStats = [];
+      const contributorStats = {}; // { name: { commits: 0, prs: 0, linesChanged: 0, team: '', logo: '' } }
+
+      for (const team of validTeams) {
+        // Process commits (with stats - only first 3 have detailed stats)
+        for (const commit of (team.commits || [])) {
+          const author = commit.commit?.author?.name || 'Unknown';
+          const lines = (commit.stats?.additions || 0) + (commit.stats?.deletions || 0);
+          allCommitsWithStats.push({
+            author,
+            team: team.name,
+            teamColor: team.color,
+            teamLogo: team.logo,
+            lines,
+            date: commit.commit?.author?.date,
+            message: commit.commit?.message?.split('\n')[0] || '',
+          });
+        }
+
+        // Process all commits for count
+        for (const commit of (team.allCommits || [])) {
+          const author = commit.commit?.author?.name || 'Unknown';
+          if (!contributorStats[author]) {
+            contributorStats[author] = { commits: 0, prs: 0, linesChanged: 0, team: team.name, teamColor: team.color, teamLogo: team.logo };
+          }
+          contributorStats[author].commits++;
+        }
+
+        // Process PRs
+        for (const pr of (team.mergedPRs || [])) {
+          const author = pr.user?.login || 'Unknown';
+          if (!contributorStats[author]) {
+            contributorStats[author] = { commits: 0, prs: 0, linesChanged: 0, team: team.name, teamColor: team.color, teamLogo: team.logo };
+          }
+          contributorStats[author].prs++;
+        }
+      }
+
+      // Calculate lines changed per contributor from commits with stats
+      for (const c of allCommitsWithStats) {
+        if (contributorStats[c.author]) {
+          contributorStats[c.author].linesChanged += c.lines;
+        }
+      }
+
+      // Find winners
+      const largestCommit = allCommitsWithStats.sort((a, b) => b.lines - a.lines)[0];
+      const firstCommit = allCommitsWithStats.filter(c => c.date).sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+
+      const contributors = Object.entries(contributorStats).map(([name, stats]) => ({ name, ...stats }));
+      const mostCommits = contributors.sort((a, b) => b.commits - a.commits)[0];
+      const mostPRs = contributors.sort((a, b) => b.prs - a.prs)[0];
+      const mostChurn = contributors.sort((a, b) => b.linesChanged - a.linesChanged)[0];
+
+      const awards = [
+        { title: 'First Commit', icon: '🚀', winner: firstCommit ? { name: firstCommit.author, team: firstCommit.team, teamColor: firstCommit.teamColor, teamLogo: firstCommit.teamLogo, value: getTimeAgo(firstCommit.date) } : null },
+        { title: 'Most Commits', icon: '📝', winner: mostCommits ? { name: mostCommits.name, team: mostCommits.team, teamColor: mostCommits.teamColor, teamLogo: mostCommits.teamLogo, value: mostCommits.commits } : null },
+        { title: 'Most PRs', icon: '🔀', winner: mostPRs?.prs > 0 ? { name: mostPRs.name, team: mostPRs.team, teamColor: mostPRs.teamColor, teamLogo: mostPRs.teamLogo, value: mostPRs.prs } : null },
+        { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.author, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines} lines` } : null },
+        { title: 'Most Churn', icon: '🔥', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged} lines` } : null },
+      ];
+
+      const grid = document.getElementById('topboard-grid');
+      grid.innerHTML = awards.map(award => `
+        <div class="topboard-item" ${award.winner?.teamLogo ? `style="background-image: url('${award.winner.teamLogo}')"` : ''}>
+          <div class="award-icon">${award.icon}</div>
+          <div class="award-title">${award.title}</div>
+          ${award.winner ? `
+            <div class="award-winner">${award.winner.name}</div>
+            <div class="award-team" style="color: ${award.winner.teamColor}"><span>${award.winner.team}</span></div>
+            <div class="award-value">${award.winner.value}</div>
+          ` : `<div class="award-empty">-</div>`}
+        </div>
+      `).join('');
+    }
+
     function renderLeaderboard(teamsData) {
       const validTeams = teamsData.filter(t => !t.error);
 
@@ -431,6 +516,7 @@
 
       const teamsData = await Promise.all(REPOS.map(fetchTeamData));
 
+      renderTopboard(teamsData);
       renderLeaderboard(teamsData);
       grid.innerHTML = teamsData.map(renderTeamCard).join('');
 

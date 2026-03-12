@@ -54,6 +54,102 @@ button:hover { border-color: var(--text-muted); }
   color: var(--text-muted);
 }
 
+.topboard {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.topboard h2 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: var(--text-muted);
+}
+
+.topboard-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.topboard-item {
+  background-color: var(--bg);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.topboard-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  opacity: 0.8;
+  border-radius: 6px;
+  z-index: 0;
+}
+
+.topboard-item > * {
+  position: relative;
+  z-index: 1;
+}
+
+.award-icon {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.award-title {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.award-winner {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.award-team {
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+  margin-top: 4px;
+  background: var(--card-bg);
+  border: 2px solid currentColor;
+}
+
+.award-team span {
+  color: var(--text);
+}
+
+.award-value {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.award-empty {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
 .leaderboard {
   background: var(--card-bg);
   border: 1px solid var(--border);
