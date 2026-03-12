@@ -607,6 +607,17 @@ button:hover { border-color: var(--text-muted); }
   text-decoration: underline;
 }
 
+.frontend-link {
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.frontend-link:hover {
+  text-decoration: underline;
+}
+
 /* Team card footer */
 .team-footer {
   padding: 16px;

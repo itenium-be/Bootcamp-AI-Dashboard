@@ -67,12 +67,12 @@
 
   <script>
     const REPOS = [
-      { name: 'Obsidian', repo: 'itenium-be/Bootcamp-AI-Obsidian', color: '#8b5cf6', logo: 'logos/Team-Obsidian.png' },
-      { name: 'RoyalPurple', repo: 'itenium-be/Bootcamp-AI-RoyalPurple', color: '#7851a9', logo: 'logos/Team-RoyalPurple.png' },
-      { name: 'Teal', repo: 'itenium-be/Bootcamp-AI-Teal', color: '#008080', logo: 'logos/Team-Teal.png' },
-      { name: 'Emerald', repo: 'itenium-be/Bootcamp-AI-Emerald', color: '#50c878', logo: 'logos/Team-Emerald.png' },
-      { name: 'Crimson', repo: 'itenium-be/Bootcamp-AI-Crimson', color: '#dc143c', logo: 'logos/Team-Crimson.png' },
-      { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#6366f1', logo: 'logos/Team-MidnightBlue.png' },
+      { name: 'Obsidian', repo: 'itenium-be/Bootcamp-AI-Obsidian', color: '#8b5cf6', logo: 'logos/Team-Obsidian.png', frontendPort: 5173 },
+      { name: 'RoyalPurple', repo: 'itenium-be/Bootcamp-AI-RoyalPurple', color: '#7851a9', logo: 'logos/Team-RoyalPurple.png', frontendPort: 5174 },
+      { name: 'Teal', repo: 'itenium-be/Bootcamp-AI-Teal', color: '#008080', logo: 'logos/Team-Teal.png', frontendPort: 5175 },
+      { name: 'Emerald', repo: 'itenium-be/Bootcamp-AI-Emerald', color: '#50c878', logo: 'logos/Team-Emerald.png', frontendPort: 5176 },
+      { name: 'Crimson', repo: 'itenium-be/Bootcamp-AI-Crimson', color: '#dc143c', logo: 'logos/Team-Crimson.png', frontendPort: 5177 },
+      { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#6366f1', logo: 'logos/Team-MidnightBlue.png', frontendPort: 5178 },
     ];
 
     const GITHUB_TO_NAME = {
@@ -569,6 +569,7 @@
               <div class="team-names">
                 ${actualTeam ? `<div class="actual-team-name">${actualTeam.name}</div>` : ''}
                 <a href="https://github.com/${team.repo}" target="_blank" class="color-team-name" style="color: ${team.color}">${team.name}</a>
+                <a href="http://localhost:${team.frontendPort}" target="_blank" class="frontend-link">:${team.frontendPort}</a>
               </div>
             </div>
             <div class="team-status">
