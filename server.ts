@@ -15,6 +15,11 @@ const PREP_COMMIT_SHA = '731e4ad50e34e6587258a6a67ceeb895e10b5366';
 
 import JSZip from 'jszip';
 
+// Cache configuration
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds
+let cachedData: { teams: any[]; tokenUsage: any[] } | null = null;
+let cacheTimestamp = 0;
+
 async function fetchGitHub(endpoint: string) {
   const headers: Record<string, string> = {
     'Accept': 'application/vnd.github.v3+json',
@@ -264,15 +269,23 @@ const server = Bun.serve({
 
     console.log(`Request: ${url.pathname}`);
 
-    // Main API endpoint - returns all data
+    // Main API endpoint - returns all data (cached for 30s)
     if (url.pathname === "/api/data") {
       try {
-        const [teamsData, tokenUsage] = await Promise.all([
-          Promise.all(REPOS.map(fetchTeamData)),
-          fetchTokenUsage(),
-        ]);
+        const now = Date.now();
+        if (!cachedData || now - cacheTimestamp > CACHE_TTL_MS) {
+          console.log("Cache miss - fetching fresh data...");
+          const [teamsData, tokenUsage] = await Promise.all([
+            Promise.all(REPOS.map(fetchTeamData)),
+            fetchTokenUsage(),
+          ]);
+          cachedData = { teams: teamsData, tokenUsage };
+          cacheTimestamp = now;
+        } else {
+          console.log(`Cache hit - ${Math.round((CACHE_TTL_MS - (now - cacheTimestamp)) / 1000)}s remaining`);
+        }
 
-        return new Response(JSON.stringify({ teams: teamsData, tokenUsage }), {
+        return new Response(JSON.stringify(cachedData), {
           headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
