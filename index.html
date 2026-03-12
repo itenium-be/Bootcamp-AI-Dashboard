@@ -157,6 +157,61 @@
       return key ? GITHUB_TO_NAME[key] : handle;
     }
 
+    // Map a person's name to their team
+    function getTeamForPerson(name) {
+      if (!name) return null;
+      const nameLower = name.toLowerCase();
+      for (const [team, members] of Object.entries(TEAM_MEMBERS)) {
+        for (const member of members) {
+          // Strip role suffix like "(POA)" from "Tom Mennes (POA)"
+          const memberName = member.replace(/\s*\([^)]+\)\s*$/, '').toLowerCase();
+          if (memberName === nameLower) {
+            return team;
+          }
+        }
+      }
+      return null;
+    }
+
+    // Token usage data
+    let tokenUsageData = null;
+
+    async function fetchTokenUsage() {
+      try {
+        const response = await fetch('/api/usage');
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.usage || [];
+      } catch (e) {
+        console.warn('Failed to fetch token usage:', e);
+        return null;
+      }
+    }
+
+    function aggregateUsageByTeam(usage) {
+      const teamUsage = {};
+      for (const repo of REPOS) {
+        teamUsage[repo.name] = { input: 0, output: 0, total: 0, color: repo.color, logo: repo.logo };
+      }
+
+      for (const entry of usage || []) {
+        const team = getTeamForPerson(entry.name);
+        if (team && teamUsage[team]) {
+          teamUsage[team].input += entry.input || 0;
+          teamUsage[team].output += entry.output || 0;
+          teamUsage[team].total += (entry.input || 0) + (entry.output || 0);
+        }
+      }
+
+      return teamUsage;
+    }
+
+    function formatTokens(n) {
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+      if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+      return n.toString();
+    }
+
     // Commits at or before this SHA are prep work and should be excluded
     const PREP_COMMIT_SHA = '731e4ad50e34e6587258a6a67ceeb895e10b5366';
 
@@ -395,7 +450,7 @@
       `;
     }
 
-    function renderTopboard(teamsData) {
+    function renderTopboard(teamsData, tokenUsage) {
       const validTeams = teamsData.filter(t => !t.error);
 
       // Collect all commits with stats across teams
@@ -457,12 +512,32 @@
       const mostPRs = contributors.sort((a, b) => b.prs - a.prs)[0];
       const mostChurn = contributors.sort((a, b) => b.linesChanged - a.linesChanged)[0];
 
+      // Find top token burner
+      let topTokenBurner = null;
+      if (tokenUsage && tokenUsage.length > 0) {
+        const sorted = [...tokenUsage].sort((a, b) => ((b.input || 0) + (b.output || 0)) - ((a.input || 0) + (a.output || 0)));
+        const top = sorted[0];
+        if (top) {
+          const team = getTeamForPerson(top.name);
+          const teamRepo = REPOS.find(r => r.name === team);
+          topTokenBurner = {
+            name: top.name,
+            handle: top.name,
+            team: team || 'Unknown',
+            teamColor: teamRepo?.color || '#888',
+            teamLogo: teamRepo?.logo || '',
+            value: formatTokens((top.input || 0) + (top.output || 0)),
+          };
+        }
+      }
+
       const awards = [
+        { title: 'Token Burner', icon: '🔥', winner: topTokenBurner },
         { title: 'First Commit', icon: '🚀', winner: firstCommit ? { name: firstCommit.name, handle: firstCommit.handle, team: firstCommit.team, teamColor: firstCommit.teamColor, teamLogo: firstCommit.teamLogo, value: getTimeAgo(firstCommit.date) } : null },
         { title: 'Most Commits', icon: '📝', winner: mostCommits ? { name: mostCommits.name, handle: mostCommits.handle, team: mostCommits.team, teamColor: mostCommits.teamColor, teamLogo: mostCommits.teamLogo, value: mostCommits.commits } : null },
         { title: 'Most PRs', icon: '🔀', winner: mostPRs?.prs > 0 ? { name: mostPRs.name, handle: mostPRs.handle, team: mostPRs.team, teamColor: mostPRs.teamColor, teamLogo: mostPRs.teamLogo, value: mostPRs.prs } : null },
         { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.name, handle: largestCommit.handle, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines} lines` } : null },
-        { title: 'Most Churn', icon: '🔥', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, handle: mostChurn.handle, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged} lines` } : null },
+        { title: 'Most Churn', icon: '🌀', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, handle: mostChurn.handle, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged} lines` } : null },
       ];
 
       const grid = document.getElementById('topboard-grid');
@@ -486,10 +561,16 @@
       }).join('');
     }
 
-    function renderLeaderboard(teamsData) {
+    function renderLeaderboard(teamsData, teamUsage) {
       const validTeams = teamsData.filter(t => !t.error);
 
       const categories = [
+        {
+          title: 'Tokens Burned',
+          icon: '🔥',
+          getData: (t) => teamUsage?.[t.name]?.total || 0,
+          format: formatTokens,
+        },
         {
           title: 'Tests Passing',
           getData: (t) => {
@@ -519,18 +600,20 @@
         const winner = sorted[0];
         const winnerScore = cat.getData(winner);
         const bgStyle = winnerScore > 0 ? `style="background-image: url('${winner.logo}')"` : '';
+        const formatFn = cat.format || (v => v);
         return `
           <div class="leaderboard-category" ${bgStyle}>
-            <h3>${cat.title}</h3>
+            <h3>${cat.icon || ''} ${cat.title}</h3>
             ${sorted.map((t, idx) => {
               const actualTeam = getActualTeam(t.name);
+              const score = cat.getData(t);
               return `
                 <div class="leaderboard-item ${idx === 0 ? 'leader' : ''}">
                   <div class="leaderboard-names">
                     ${actualTeam ? `<span class="leaderboard-actual">${actualTeam.name}</span>` : ''}
                     <span class="leaderboard-color" style="border-color: ${t.color}; color: ${t.color}; text-align: center">${t.name}</span>
                   </div>
-                  <span class="score">${cat.getData(t)}</span>
+                  <span class="score">${formatFn(score)}</span>
                 </div>
               `;
             }).join('')}
@@ -682,10 +765,15 @@
       const grid = document.getElementById('teams-grid');
       grid.innerHTML = '<div class="loading">Loading...</div>';
 
-      const teamsData = await Promise.all(REPOS.map(fetchTeamData));
+      const [teamsData, tokenUsage] = await Promise.all([
+        Promise.all(REPOS.map(fetchTeamData)),
+        fetchTokenUsage(),
+      ]);
 
-      renderTopboard(teamsData);
-      renderLeaderboard(teamsData);
+      const teamUsage = aggregateUsageByTeam(tokenUsage);
+
+      renderTopboard(teamsData, tokenUsage);
+      renderLeaderboard(teamsData, teamUsage);
       grid.innerHTML = teamsData.map(renderTeamCard).join('');
 
       startCountdown();

@@ -1,4 +1,16 @@
 services:
+  # Dashboard - port 8080
+  dashboard:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: runner-dashboard
+    ports:
+      - "8080:8080"
+    environment:
+      ANTHROPIC_ADMIN_KEY: ${ANTHROPIC_ADMIN_KEY}
+    restart: unless-stopped
+
   # Obsidian - ports 5440/5010/5180
   postgres-obsidian:
     image: postgres:17
