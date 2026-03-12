@@ -9,11 +9,13 @@ services:
       - "8080:8080"
     environment:
       ANTHROPIC_ADMIN_KEY: ${ANTHROPIC_ADMIN_KEY}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
     volumes:
       - ../index.html:/app/index.html
       - ../styles.css:/app/styles.css
       - ../server.ts:/app/server.ts
       - ../logos:/app/logos
+    command: bun --watch run server.ts
     restart: unless-stopped
 
   # Obsidian - ports 5440/5010/5180

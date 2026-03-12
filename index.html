@@ -553,7 +553,6 @@
               <div class="award-team" style="color: ${award.winner.teamColor}">
                 <span>${actualTeam ? actualTeam.name : award.winner.team}</span>
               </div>
-              ${actualTeam ? '' : `<div class="award-team-color">${award.winner.team}</div>`}
               <div class="award-value"><span>${award.winner.value}</span></div>
             ` : `<div class="award-empty">-</div>`}
           </div>
@@ -769,16 +768,22 @@
       const grid = document.getElementById('teams-grid');
       grid.innerHTML = '<div class="loading">Loading...</div>';
 
-      const [teamsData, tokenUsage] = await Promise.all([
-        Promise.all(REPOS.map(fetchTeamData)),
-        fetchTokenUsage(),
-      ]);
+      try {
+        const response = await fetch('/api/data');
+        if (!response.ok) throw new Error('API error');
+        const data = await response.json();
 
-      const teamUsage = aggregateUsageByTeam(tokenUsage);
+        const teamsData = data.teams || [];
+        const tokenUsage = data.tokenUsage || [];
+        const teamUsage = aggregateUsageByTeam(tokenUsage);
 
-      renderTopboard(teamsData, tokenUsage);
-      renderLeaderboard(teamsData, teamUsage);
-      grid.innerHTML = teamsData.map(renderTeamCard).join('');
+        renderTopboard(teamsData, tokenUsage);
+        renderLeaderboard(teamsData, teamUsage);
+        grid.innerHTML = teamsData.map(renderTeamCard).join('');
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        grid.innerHTML = '<div class="error">Failed to load data. Check server logs.</div>';
+      }
 
       startCountdown();
     }
@@ -787,9 +792,6 @@
     document.getElementById('server-address').textContent = `${location.hostname}:8080`;
 
     // Initial load
-    if (!getToken()) {
-      showTokenModal();
-    }
     refresh();
     setInterval(refresh, REFRESH_INTERVAL);
   </script>
