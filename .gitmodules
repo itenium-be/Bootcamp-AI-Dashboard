@@ -1,0 +1,18 @@
+[submodule "runner/repos/Obsidian"]
+	path = runner/repos/Obsidian
+	url = https://github.com/itenium-be/Bootcamp-AI-Obsidian
+[submodule "runner/repos/RoyalPurple"]
+	path = runner/repos/RoyalPurple
+	url = https://github.com/itenium-be/Bootcamp-AI-RoyalPurple
+[submodule "runner/repos/Teal"]
+	path = runner/repos/Teal
+	url = https://github.com/itenium-be/Bootcamp-AI-Teal
+[submodule "runner/repos/Emerald"]
+	path = runner/repos/Emerald
+	url = https://github.com/itenium-be/Bootcamp-AI-Emerald
+[submodule "runner/repos/Crimson"]
+	path = runner/repos/Crimson
+	url = https://github.com/itenium-be/Bootcamp-AI-Crimson
+[submodule "runner/repos/MidnightBlue"]
+	path = runner/repos/MidnightBlue
+	url = https://github.com/itenium-be/Bootcamp-AI-MidnightBlue
