@@ -13,17 +13,15 @@ bunx serve -l 8080
 
 Runs all 6 team applications via Docker.
 
-```bash
+```powershell
 cd runner
 
-# Setup credentials
+# Setup (first time only)
 cp .env.example .env
 # Edit .env with GITHUB_USER and GITHUB_TOKEN (read:packages scope)
 
-# Pull latest submodules
-git submodule update --remote --merge
-
-# Start all teams
+# Pull latest code & start
+.\update.ps1
 docker compose up -d --build
 
 # Stop all
@@ -38,5 +36,3 @@ docker compose down
 | Emerald      | :5183    | :5013   | :5443|
 | Crimson      | :5184    | :5014   | :5444|
 | MidnightBlue | :5185    | :5015   | :5445|
-
-Main codebase uses `:5173/:5000/:5433` - no conflicts.
