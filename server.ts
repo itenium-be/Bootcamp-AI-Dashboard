@@ -1,5 +1,5 @@
 const ANTHROPIC_ADMIN_KEY = process.env.ANTHROPIC_ADMIN_KEY;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_TOKEN = process.env.GITHUB_ACTIONS_TOKEN;
 
 const REPOS = [
   { name: 'Obsidian', repo: 'itenium-be/Bootcamp-AI-Obsidian', color: '#8b5cf6', logo: 'logos/Team-Obsidian.png', frontendPort: 5180 },
@@ -103,6 +103,8 @@ async function fetchTestResults(repo: string, runId: number) {
       frontend: { unit: null, e2e: null }
     };
 
+    console.log(`[${repo}] Found ${artifacts.artifacts?.length || 0} artifacts:`, artifacts.artifacts?.map((a: any) => a.name));
+
     for (const artifact of artifacts.artifacts || []) {
       if (artifact.name === 'backend-test-results' || artifact.name === 'frontend-test-results') {
         try {
@@ -115,21 +117,40 @@ async function fetchTestResults(repo: string, runId: number) {
 
           const response = await fetch(
             `https://api.github.com/repos/${repo}/actions/artifacts/${artifact.id}/zip`,
-            { headers }
+            { headers, redirect: 'follow' }
           );
+
+          console.log(`[${repo}] Artifact ${artifact.name} fetch status: ${response.status}`);
+          if (!response.ok) {
+            console.log(`[${repo}] Artifact error body:`, await response.text());
+          }
 
           if (response.ok) {
             const buffer = await response.arrayBuffer();
             const zip = await JSZip.loadAsync(buffer);
+            const files = Object.keys(zip.files);
+            console.log(`[${repo}] Files in ${artifact.name}:`, files);
 
             if (artifact.name === 'backend-test-results') {
               const file = zip.file('test-results.json');
-              if (file) results.backend = JSON.parse(await file.async('string'));
+              if (file) {
+                const content = await file.async('string');
+                console.log(`[${repo}] Backend test results:`, content.substring(0, 200));
+                results.backend = JSON.parse(content);
+              }
             } else {
               const unitFile = zip.file('unit-test-results.json');
               const e2eFile = zip.file('e2e-test-results.json');
-              if (unitFile) results.frontend.unit = JSON.parse(await unitFile.async('string'));
-              if (e2eFile) results.frontend.e2e = JSON.parse(await e2eFile.async('string'));
+              if (unitFile) {
+                const content = await unitFile.async('string');
+                console.log(`[${repo}] Unit test results:`, content.substring(0, 200));
+                results.frontend.unit = JSON.parse(content);
+              }
+              if (e2eFile) {
+                const content = await e2eFile.async('string');
+                console.log(`[${repo}] E2E test results:`, content.substring(0, 200));
+                results.frontend.e2e = JSON.parse(content);
+              }
             }
           }
         } catch (e) {
@@ -204,7 +225,9 @@ async function fetchTeamData(team: typeof REPOS[0]) {
 
     // Fetch test results from artifacts
     const runId = workflows.workflow_runs?.[0]?.id;
+    console.log(`[${repo}] Workflow runId: ${runId}, status: ${buildStatus}`);
     const testResults = runId ? await fetchTestResults(repo, runId) : null;
+    console.log(`[${repo}] Test results:`, JSON.stringify(testResults));
 
     return {
       ...team,
@@ -238,6 +261,8 @@ const server = Bun.serve({
   hostname: "0.0.0.0",
   async fetch(req) {
     const url = new URL(req.url);
+
+    console.log(`Request: ${url.pathname}`);
 
     // Main API endpoint - returns all data
     if (url.pathname === "/api/data") {

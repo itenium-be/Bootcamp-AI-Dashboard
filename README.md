@@ -25,6 +25,10 @@ docker compose up -d --build
 
 # Stop all
 docker compose down
+
+# Force restart of dashboard
+docker compose -f docker-compose.yml restart dashboard
+docker compose -f docker-compose.yml up -d --force-recreate dashboard
 ```
 
 | Service      | Port  |
