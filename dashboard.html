@@ -17,6 +17,7 @@
     <div class="controls">
       <span class="refresh-countdown" id="countdown"></span>
       <button onclick="refresh()">Refresh Now</button>
+      <button onclick="showTeamModal()">Team Names</button>
       <button onclick="showTokenModal()">Set Token</button>
     </div>
   </header>
@@ -47,6 +48,18 @@
       <div class="buttons">
         <button onclick="hideTokenModal()">Cancel</button>
         <button class="btn-primary" onclick="saveToken()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="token-modal hidden" id="team-modal">
+    <div class="token-dialog team-dialog">
+      <h2>Assign Team Names</h2>
+      <p>Select the actual team name for each color team.</p>
+      <div class="team-selectors" id="team-selectors"></div>
+      <div class="buttons">
+        <button onclick="hideTeamModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveTeamNames()">Save</button>
       </div>
     </div>
   </div>
@@ -105,6 +118,35 @@
       'michael-itenium': 'Michael Branders',
     };
 
+    const ACTUAL_TEAMS = [
+      { id: 'hallucination-hunters', name: 'The Hallucination Hunters', tagline: 'We chase what shouldn\'t exist.', description: 'The Hallucination Hunters track down every rogue AI hallucination and keep our models from running wild. Precision and patience are our secret weapons.' },
+      { id: 'prompt-injectors', name: 'The Prompt Injectors', tagline: 'Prompts in, magic out.', description: 'The Prompt Injectors masterfully craft and inject prompts to coax the best results from our AI. Creativity meets chaos here.' },
+      { id: 'token-burners', name: 'The Token Burners', tagline: 'We learn by burning.', description: 'The Token Burners throw caution to the wind and feed our AI models token after token, seeing what survives the fire.' },
+      { id: 'ai-slop-sommeliers', name: 'The AI Slop Sommeliers', tagline: 'We taste the chaos.', description: 'The AI Slop Sommeliers sample every output from our models, rating quality, flavor, and absurdity — connoisseurs of AI chaos.' },
+      { id: 'yolo-deployers', name: 'The YOLO Deployers', tagline: 'Deploy now, debug later.', description: 'The YOLO Deployers thrive on adrenaline. They deploy to production without hesitation and let the AI do its thing.' },
+      { id: 'tab-tab-tab-engineers', name: 'The Tab Tab Tab Engineers', tagline: 'Automation over hesitation.', description: 'The Tab Tab Tab Engineers embody ultimate AI trust — every suggestion gets accepted with a tap of Tab. No thinking, no debating, just flow and speed.' },
+      { id: 'vibe-driven-developers', name: 'The Vibe-Driven Developers', tagline: 'Good vibes, great code.', description: 'The Vibe-Driven Developers balance focus and relaxation, producing solid code while keeping the energy high and stress low.' },
+      { id: 'prompt-pray-engineers', name: 'The Prompt & Pray Engineers', tagline: 'Prompt. Pray. Repeat.', description: 'The Prompt & Pray Engineers trust the AI — and a little bit of luck — to get the job done, embodying the true spirit of bootcamp chaos.' },
+      { id: 'claude-carried-us', name: 'The "Claude Carried Us" Department', tagline: 'We typed. Claude decided.', description: 'Claude Carried Us shows what happens when you let AI take the lead — the team did some typing, but Claude did all the heavy lifting.' },
+      { id: 'tests-are-for-cowards', name: 'The "Tests Are For Cowards" Club', tagline: 'Bravery over coverage.', description: 'The Tests Are For Cowards Club embraces risk and shuns tests, proving that confidence sometimes outweighs caution… barely.' },
+      { id: 'model-collapse-survivors', name: 'The Model Collapse Survivors', tagline: 'Rising from the ashes of failed models.', description: 'The Model Collapse Survivors thrive in post-disaster recovery, salvaging AI models and learning from every spectacular failure.' },
+      { id: 'main-branch-pushers', name: 'The Main Branch Pushers', tagline: 'No staging, no fear.', description: 'The Main Branch Pushers live on the edge, merging code straight into main and proving that speed and confidence are everything in bootcamp chaos.' },
+    ];
+
+    function getTeamMapping() {
+      return JSON.parse(localStorage.getItem('team_mapping') || '{}');
+    }
+
+    function saveTeamMapping(mapping) {
+      localStorage.setItem('team_mapping', JSON.stringify(mapping));
+    }
+
+    function getActualTeam(colorName) {
+      const mapping = getTeamMapping();
+      const actualId = mapping[colorName];
+      return ACTUAL_TEAMS.find(t => t.id === actualId) || null;
+    }
+
     function resolveName(handle) {
       if (!handle) return null;
       // Case-insensitive lookup
@@ -140,6 +182,40 @@
         localStorage.removeItem('github_token');
       }
       hideTokenModal();
+      refresh();
+    }
+
+    function showTeamModal() {
+      const container = document.getElementById('team-selectors');
+      const mapping = getTeamMapping();
+      container.innerHTML = REPOS.map(repo => `
+        <div class="team-selector">
+          <label style="color: ${repo.color}">${repo.name}</label>
+          <select id="team-select-${repo.name}">
+            <option value="">-- Select Team --</option>
+            ${ACTUAL_TEAMS.map(t => `
+              <option value="${t.id}" ${mapping[repo.name] === t.id ? 'selected' : ''}>${t.name}</option>
+            `).join('')}
+          </select>
+        </div>
+      `).join('');
+      document.getElementById('team-modal').classList.remove('hidden');
+    }
+
+    function hideTeamModal() {
+      document.getElementById('team-modal').classList.add('hidden');
+    }
+
+    function saveTeamNames() {
+      const mapping = {};
+      REPOS.forEach(repo => {
+        const select = document.getElementById(`team-select-${repo.name}`);
+        if (select.value) {
+          mapping[repo.name] = select.value;
+        }
+      });
+      saveTeamMapping(mapping);
+      hideTeamModal();
       refresh();
     }
 
@@ -387,18 +463,24 @@
       ];
 
       const grid = document.getElementById('topboard-grid');
-      grid.innerHTML = awards.map(award => `
-        <div class="topboard-item" ${award.winner?.teamLogo ? `style="background-image: url('${award.winner.teamLogo}')"` : ''}>
-          <div class="award-icon">${award.icon}</div>
-          <div class="award-title">${award.title}</div>
-          ${award.winner ? `
-            <div class="award-winner">${award.winner.name}</div>
-            <div class="award-handle">@${award.winner.handle}</div>
-            <div class="award-team" style="color: ${award.winner.teamColor}"><span>${award.winner.team}</span></div>
-            <div class="award-value"><span>${award.winner.value}</span></div>
-          ` : `<div class="award-empty">-</div>`}
-        </div>
-      `).join('');
+      grid.innerHTML = awards.map(award => {
+        const actualTeam = award.winner ? getActualTeam(award.winner.team) : null;
+        return `
+          <div class="topboard-item" ${award.winner?.teamLogo ? `style="background-image: url('${award.winner.teamLogo}')"` : ''}>
+            <div class="award-icon">${award.icon}</div>
+            <div class="award-title">${award.title}</div>
+            ${award.winner ? `
+              <div class="award-winner">${award.winner.name}</div>
+              <div class="award-handle">@${award.winner.handle}</div>
+              <div class="award-team" style="color: ${award.winner.teamColor}">
+                <span>${actualTeam ? actualTeam.name : award.winner.team}</span>
+              </div>
+              ${actualTeam ? '' : `<div class="award-team-color">${award.winner.team}</div>`}
+              <div class="award-value"><span>${award.winner.value}</span></div>
+            ` : `<div class="award-empty">-</div>`}
+          </div>
+        `;
+      }).join('');
     }
 
     function renderLeaderboard(teamsData) {
@@ -437,12 +519,17 @@
         return `
           <div class="leaderboard-category" ${bgStyle}>
             <h3>${cat.title}</h3>
-            ${sorted.map(t => `
-              <div class="leaderboard-item">
-                <span class="team-name" style="color: ${t.color}">${t.name}</span>
-                <span class="score">${cat.getData(t)}</span>
-              </div>
-            `).join('')}
+            ${sorted.map(t => {
+              const actualTeam = getActualTeam(t.name);
+              return `
+                <div class="leaderboard-item">
+                  <span class="team-name" style="color: ${t.color}">
+                    ${actualTeam ? `${actualTeam.name} <span class="color-name">(${t.name})</span>` : t.name}
+                  </span>
+                  <span class="score">${cat.getData(t)}</span>
+                </div>
+              `;
+            }).join('')}
           </div>
         `;
       }).join('');
@@ -468,13 +555,17 @@
       const buildClass = getBuildStatusClass(team.buildStatus);
       const buildIcon = getBuildStatusIcon(team.buildStatus);
       const lastPushClass = getTimeAgoClass(team.lastPush);
+      const actualTeam = getActualTeam(team.name);
 
       return `
         <div class="team-card">
           <div class="team-header">
             <div class="team-name-title">
               <img src="${team.logo}" alt="${team.name}" class="team-logo">
-              <a href="https://github.com/${team.repo}" target="_blank" style="color: inherit; text-decoration: none;">${team.name}</a>
+              <div class="team-names">
+                ${actualTeam ? `<div class="actual-team-name">${actualTeam.name}</div>` : ''}
+                <a href="https://github.com/${team.repo}" target="_blank" class="color-team-name" style="color: ${team.color}">${team.name}</a>
+              </div>
             </div>
             <div class="team-status">
               <span class="build-status ${buildClass}">${buildIcon} ${team.buildStatus}</span>
@@ -551,6 +642,12 @@
               </div>
             ` : ''}
           </div>
+          ${actualTeam ? `
+            <div class="team-footer">
+              <div class="team-tagline">${actualTeam.tagline}</div>
+              <div class="team-description">${actualTeam.description}</div>
+            </div>
+          ` : ''}
         </div>
       `;
     }

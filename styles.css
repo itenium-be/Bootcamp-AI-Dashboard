@@ -507,3 +507,89 @@ button:hover { border-color: var(--text-muted); }
 .test-result.test-fail {
   border: 1px solid var(--danger);
 }
+
+/* Team modal */
+.team-dialog {
+  max-width: 600px;
+}
+
+.team-selectors {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.team-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.team-selector label {
+  width: 120px;
+  font-weight: 600;
+}
+
+.team-selector select {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+/* Team card header with actual name */
+.team-names {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.actual-team-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.color-team-name {
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.color-team-name:hover {
+  text-decoration: underline;
+}
+
+/* Team card footer */
+.team-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.team-tagline {
+  font-style: italic;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.team-description {
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* Leaderboard color name */
+.leaderboard-item .color-name {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* Hall of Fame color team */
+.award-team-color {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
