@@ -58,6 +58,57 @@
       { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#191970', logo: 'logos/Team-MidnightBlue.png' },
     ];
 
+    const GITHUB_TO_NAME = {
+      // Obsidian
+      'laoujin': 'Wouter Van Schandevijl',
+      'CtrlAltSell': 'Willem Meylemans',
+      'Iggy-LetItSnow': 'Igor Romy',
+      'TimoVersonnen': 'Timo Versonnen',
+      'Runekid': 'Onur Bugdayci',
+      'JochemVH1': 'Jochem Van Hespen',
+      // RoyalPurple
+      'borosseel': 'Bo Rosseel',
+      'joriswijnant-ctrl': 'Joris Wijnant',
+      'Brauwer': 'Thomas De Brauwer',
+      'Mikedonna': 'Michael Dumortier',
+      'TimRanson': 'Tim Ranson',
+      'TomNok': 'Tom Marroyen',
+      // Teal
+      'Stevenrobijns': 'Steven Robijns',
+      'bossepierreai': 'Pierre Bossé',
+      'Ninarchive': 'Nina Van Hoof',
+      'bertforge': 'Bert Maes',
+      'TyaraSchetgens': 'Tyara Schetgens',
+      // Emerald
+      'GitHired': 'Jelle Muijzelaar',
+      'Bvervaele': 'Bert Vervaele',
+      'YannickManfroy': 'Yannick Manfroy',
+      'BernelliG': 'Bernard Giorgino',
+      'remcoverbruggen-itenium': 'Remco Verbruggen',
+      'GClaeskens1978': 'Gert Claeskens',
+      // Crimson
+      'heleendemeue': 'Heleen de Meue',
+      'Jonathanrasquin': 'Jonathan Rasquin',
+      'dsverdlo': 'David Sverdlov',
+      'JelleMaes': 'Jelle Maes',
+      'Plekker': 'Bram De Plekker',
+      // MidnightBlue
+      'A-Ryckeboer': 'Alexander Ryckeboer',
+      'NicolasHub': 'Nicolas Legrand',
+      'JoachimDhondtItenium': 'Joachim D\'hondt',
+      'jvanloock': 'Jos Van Loock',
+      'Tomm-commits': 'Tom Mennes',
+      // POs
+      'michael-itenium': 'Michael Branders',
+    };
+
+    function resolveName(handle) {
+      if (!handle) return null;
+      // Case-insensitive lookup
+      const key = Object.keys(GITHUB_TO_NAME).find(k => k.toLowerCase() === handle.toLowerCase());
+      return key ? GITHUB_TO_NAME[key] : handle;
+    }
+
     // Commits at or before this SHA are prep work and should be excluded
     const PREP_COMMIT_SHA = 'a3e4266';
 
@@ -272,10 +323,12 @@
       for (const team of validTeams) {
         // Process commits (with stats - only first 3 have detailed stats)
         for (const commit of (team.commits || [])) {
-          const author = commit.commit?.author?.name || 'Unknown';
+          const handle = commit.author?.login || commit.commit?.author?.name || 'Unknown';
+          const name = resolveName(handle);
           const lines = (commit.stats?.additions || 0) + (commit.stats?.deletions || 0);
           allCommitsWithStats.push({
-            author,
+            name,
+            handle,
             team: team.name,
             teamColor: team.color,
             teamLogo: team.logo,
@@ -287,27 +340,29 @@
 
         // Process all commits for count
         for (const commit of (team.allCommits || [])) {
-          const author = commit.commit?.author?.name || 'Unknown';
-          if (!contributorStats[author]) {
-            contributorStats[author] = { commits: 0, prs: 0, linesChanged: 0, team: team.name, teamColor: team.color, teamLogo: team.logo };
+          const handle = commit.author?.login || commit.commit?.author?.name || 'Unknown';
+          const name = resolveName(handle);
+          if (!contributorStats[name]) {
+            contributorStats[name] = { handle, commits: 0, prs: 0, linesChanged: 0, team: team.name, teamColor: team.color, teamLogo: team.logo };
           }
-          contributorStats[author].commits++;
+          contributorStats[name].commits++;
         }
 
         // Process PRs
         for (const pr of (team.mergedPRs || [])) {
-          const author = pr.user?.login || 'Unknown';
-          if (!contributorStats[author]) {
-            contributorStats[author] = { commits: 0, prs: 0, linesChanged: 0, team: team.name, teamColor: team.color, teamLogo: team.logo };
+          const handle = pr.user?.login || 'Unknown';
+          const name = resolveName(handle);
+          if (!contributorStats[name]) {
+            contributorStats[name] = { handle, commits: 0, prs: 0, linesChanged: 0, team: team.name, teamColor: team.color, teamLogo: team.logo };
           }
-          contributorStats[author].prs++;
+          contributorStats[name].prs++;
         }
       }
 
       // Calculate lines changed per contributor from commits with stats
       for (const c of allCommitsWithStats) {
-        if (contributorStats[c.author]) {
-          contributorStats[c.author].linesChanged += c.lines;
+        if (contributorStats[c.name]) {
+          contributorStats[c.name].linesChanged += c.lines;
         }
       }
 
@@ -321,11 +376,11 @@
       const mostChurn = contributors.sort((a, b) => b.linesChanged - a.linesChanged)[0];
 
       const awards = [
-        { title: 'First Commit', icon: '🚀', winner: firstCommit ? { name: firstCommit.author, team: firstCommit.team, teamColor: firstCommit.teamColor, teamLogo: firstCommit.teamLogo, value: getTimeAgo(firstCommit.date) } : null },
-        { title: 'Most Commits', icon: '📝', winner: mostCommits ? { name: mostCommits.name, team: mostCommits.team, teamColor: mostCommits.teamColor, teamLogo: mostCommits.teamLogo, value: mostCommits.commits } : null },
-        { title: 'Most PRs', icon: '🔀', winner: mostPRs?.prs > 0 ? { name: mostPRs.name, team: mostPRs.team, teamColor: mostPRs.teamColor, teamLogo: mostPRs.teamLogo, value: mostPRs.prs } : null },
-        { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.author, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines} lines` } : null },
-        { title: 'Most Churn', icon: '🔥', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged} lines` } : null },
+        { title: 'First Commit', icon: '🚀', winner: firstCommit ? { name: firstCommit.name, handle: firstCommit.handle, team: firstCommit.team, teamColor: firstCommit.teamColor, teamLogo: firstCommit.teamLogo, value: getTimeAgo(firstCommit.date) } : null },
+        { title: 'Most Commits', icon: '📝', winner: mostCommits ? { name: mostCommits.name, handle: mostCommits.handle, team: mostCommits.team, teamColor: mostCommits.teamColor, teamLogo: mostCommits.teamLogo, value: mostCommits.commits } : null },
+        { title: 'Most PRs', icon: '🔀', winner: mostPRs?.prs > 0 ? { name: mostPRs.name, handle: mostPRs.handle, team: mostPRs.team, teamColor: mostPRs.teamColor, teamLogo: mostPRs.teamLogo, value: mostPRs.prs } : null },
+        { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.name, handle: largestCommit.handle, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines} lines` } : null },
+        { title: 'Most Churn', icon: '🔥', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, handle: mostChurn.handle, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged} lines` } : null },
       ];
 
       const grid = document.getElementById('topboard-grid');
@@ -335,8 +390,9 @@
           <div class="award-title">${award.title}</div>
           ${award.winner ? `
             <div class="award-winner">${award.winner.name}</div>
+            <div class="award-handle">@${award.winner.handle}</div>
             <div class="award-team" style="color: ${award.winner.teamColor}"><span>${award.winner.team}</span></div>
-            <div class="award-value">${award.winner.value}</div>
+            <div class="award-value"><span>${award.winner.value}</span></div>
           ` : `<div class="award-empty">-</div>`}
         </div>
       `).join('');
