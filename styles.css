@@ -31,6 +31,17 @@ header {
 
 h1 { font-size: 1.5rem; }
 
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  width: 40px;
+  height: 40px;
+}
+
 .controls {
   display: flex;
   gap: 12px;
@@ -189,9 +200,28 @@ button:hover { border-color: var(--text-muted); }
 }
 
 .leaderboard-category {
-  background: var(--bg);
+  background-color: var(--bg);
+  background-size: 70%;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 6px;
   padding: 12px;
+  position: relative;
+}
+
+.leaderboard-category::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  opacity: 0.85;
+  border-radius: 6px;
+  z-index: 0;
+}
+
+.leaderboard-category > * {
+  position: relative;
+  z-index: 1;
 }
 
 .leaderboard-category h3 {
@@ -206,7 +236,7 @@ button:hover { border-color: var(--text-muted); }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 0;
+  padding: 6px 0;
   font-size: 0.875rem;
 }
 

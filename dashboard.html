@@ -10,7 +10,10 @@
 </head>
 <body>
   <header>
-    <h1>SkillForge AI Bootcamp Dashboard</h1>
+    <div class="header-title">
+      <img src="favicon.png" alt="SkillForge" class="header-logo">
+      <h1>SkillForge AI Bootcamp Dashboard</h1>
+    </div>
     <div class="controls">
       <span class="refresh-countdown" id="countdown"></span>
       <button onclick="refresh()">Refresh Now</button>
@@ -428,8 +431,11 @@
       const grid = document.getElementById('leaderboard-grid');
       grid.innerHTML = categories.map(cat => {
         const sorted = [...validTeams].sort((a, b) => cat.getData(b) - cat.getData(a));
+        const winner = sorted[0];
+        const winnerScore = cat.getData(winner);
+        const bgStyle = winnerScore > 0 ? `style="background-image: url('${winner.logo}')"` : '';
         return `
-          <div class="leaderboard-category">
+          <div class="leaderboard-category" ${bgStyle}>
             <h3>${cat.title}</h3>
             ${sorted.map(t => `
               <div class="leaderboard-item">
