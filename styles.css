@@ -657,3 +657,144 @@ button:hover { border-color: var(--text-muted); }
   color: var(--text-muted);
   margin-top: 2px;
 }
+
+/* Mobile responsive */
+@media (max-width: 1200px) {
+  .topboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .leaderboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 12px;
+    overflow-x: hidden;
+  }
+
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 1.25rem;
+  }
+
+  .topboard {
+    padding: 12px;
+  }
+
+  .topboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .topboard-item {
+    padding: 10px;
+    padding-top: 32px;
+    aspect-ratio: auto;
+    min-height: 140px;
+  }
+
+  .award-icon {
+    font-size: 1.75rem;
+  }
+
+  .award-title {
+    font-size: 0.75rem;
+  }
+
+  .award-winner {
+    font-size: 1rem;
+  }
+
+  .award-team {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+  }
+
+  .leaderboard {
+    padding: 12px;
+  }
+
+  .leaderboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .leaderboard-category {
+    padding: 10px;
+    aspect-ratio: auto;
+    min-width: 0;
+  }
+
+  .leaderboard-category h3 {
+    font-size: 0.7rem;
+  }
+
+  .leaderboard-item {
+    padding: 6px;
+    margin-bottom: 4px;
+  }
+
+  .leaderboard-actual {
+    font-size: 0.75rem;
+  }
+
+  .leaderboard-color {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+  }
+
+  .leaderboard-item .score {
+    font-size: 0.9rem;
+  }
+
+  .teams-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .team-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .team-status {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .topboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .leaderboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .leaderboard-category {
+    aspect-ratio: auto;
+  }
+
+  .controls button {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+
+  .server-address {
+    font-size: 0.75rem;
+  }
+}
