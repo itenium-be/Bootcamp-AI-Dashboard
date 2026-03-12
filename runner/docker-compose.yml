@@ -3,6 +3,10 @@ services:
   postgres-obsidian:
     image: postgres:17
     container_name: runner-db-obsidian
+    networks:
+      obsidian-net:
+        aliases:
+          - postgres
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
@@ -24,11 +28,11 @@ services:
         NUGET_USER: ${GITHUB_USER}
         NUGET_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-backend-obsidian
+    networks:
+      - obsidian-net
     restart: on-failure
     ports:
       - "5010:8080"
-    environment:
-      ConnectionStrings__DefaultConnection: Host=postgres-obsidian;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
     depends_on:
       postgres-obsidian:
         condition: service_healthy
@@ -40,6 +44,8 @@ services:
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-obsidian
+    networks:
+      - obsidian-net
     ports:
       - "5180:5173"
     environment:
@@ -51,6 +57,10 @@ services:
   postgres-royalpurple:
     image: postgres:17
     container_name: runner-db-royalpurple
+    networks:
+      royalpurple-net:
+        aliases:
+          - postgres
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
@@ -72,11 +82,11 @@ services:
         NUGET_USER: ${GITHUB_USER}
         NUGET_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-backend-royalpurple
+    networks:
+      - royalpurple-net
     restart: on-failure
     ports:
       - "5011:8080"
-    environment:
-      ConnectionStrings__DefaultConnection: Host=postgres-royalpurple;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
     depends_on:
       postgres-royalpurple:
         condition: service_healthy
@@ -88,6 +98,8 @@ services:
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-royalpurple
+    networks:
+      - royalpurple-net
     ports:
       - "5181:5173"
     environment:
@@ -99,6 +111,10 @@ services:
   postgres-teal:
     image: postgres:17
     container_name: runner-db-teal
+    networks:
+      teal-net:
+        aliases:
+          - postgres
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
@@ -120,11 +136,11 @@ services:
         NUGET_USER: ${GITHUB_USER}
         NUGET_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-backend-teal
+    networks:
+      - teal-net
     restart: on-failure
     ports:
       - "5012:8080"
-    environment:
-      ConnectionStrings__DefaultConnection: Host=postgres-teal;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
     depends_on:
       postgres-teal:
         condition: service_healthy
@@ -136,6 +152,8 @@ services:
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-teal
+    networks:
+      - teal-net
     ports:
       - "5182:5173"
     environment:
@@ -147,6 +165,10 @@ services:
   postgres-emerald:
     image: postgres:17
     container_name: runner-db-emerald
+    networks:
+      emerald-net:
+        aliases:
+          - postgres
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
@@ -168,11 +190,11 @@ services:
         NUGET_USER: ${GITHUB_USER}
         NUGET_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-backend-emerald
+    networks:
+      - emerald-net
     restart: on-failure
     ports:
       - "5013:8080"
-    environment:
-      ConnectionStrings__DefaultConnection: Host=postgres-emerald;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
     depends_on:
       postgres-emerald:
         condition: service_healthy
@@ -184,6 +206,8 @@ services:
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-emerald
+    networks:
+      - emerald-net
     ports:
       - "5183:5173"
     environment:
@@ -195,6 +219,10 @@ services:
   postgres-crimson:
     image: postgres:17
     container_name: runner-db-crimson
+    networks:
+      crimson-net:
+        aliases:
+          - postgres
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
@@ -216,11 +244,11 @@ services:
         NUGET_USER: ${GITHUB_USER}
         NUGET_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-backend-crimson
+    networks:
+      - crimson-net
     restart: on-failure
     ports:
       - "5014:8080"
-    environment:
-      ConnectionStrings__DefaultConnection: Host=postgres-crimson;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
     depends_on:
       postgres-crimson:
         condition: service_healthy
@@ -232,6 +260,8 @@ services:
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-crimson
+    networks:
+      - crimson-net
     ports:
       - "5184:5173"
     environment:
@@ -243,6 +273,10 @@ services:
   postgres-midnightblue:
     image: postgres:17
     container_name: runner-db-midnightblue
+    networks:
+      midnightblue-net:
+        aliases:
+          - postgres
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
@@ -264,11 +298,11 @@ services:
         NUGET_USER: ${GITHUB_USER}
         NUGET_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-backend-midnightblue
+    networks:
+      - midnightblue-net
     restart: on-failure
     ports:
       - "5015:8080"
-    environment:
-      ConnectionStrings__DefaultConnection: Host=postgres-midnightblue;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
     depends_on:
       postgres-midnightblue:
         condition: service_healthy
@@ -280,12 +314,22 @@ services:
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-midnightblue
+    networks:
+      - midnightblue-net
     ports:
       - "5185:5173"
     environment:
       VITE_API_URL: http://localhost:5015
     depends_on:
       - backend-midnightblue
+
+networks:
+  obsidian-net:
+  royalpurple-net:
+  teal-net:
+  emerald-net:
+  crimson-net:
+  midnightblue-net:
 
 volumes:
   pgdata-obsidian:
