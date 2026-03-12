@@ -2,6 +2,9 @@
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+Write-Host "Resetting local changes in submodules..." -ForegroundColor Cyan
+git submodule foreach --recursive git checkout .
+
 Write-Host "Updating all submodules..." -ForegroundColor Cyan
 git submodule update --remote --merge
 
