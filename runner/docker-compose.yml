@@ -36,7 +36,7 @@ services:
   frontend-obsidian:
     build:
       context: ./repos/Obsidian/Itenium.SkillForge/frontend
-      dockerfile: ../../Dockerfile.frontend
+      dockerfile: ../../../../Dockerfile.frontend
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-obsidian
@@ -84,7 +84,7 @@ services:
   frontend-royalpurple:
     build:
       context: ./repos/RoyalPurple/Itenium.SkillForge/frontend
-      dockerfile: ../../Dockerfile.frontend
+      dockerfile: ../../../../Dockerfile.frontend
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-royalpurple
@@ -132,7 +132,7 @@ services:
   frontend-teal:
     build:
       context: ./repos/Teal/Itenium.SkillForge/frontend
-      dockerfile: ../../Dockerfile.frontend
+      dockerfile: ../../../../Dockerfile.frontend
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-teal
@@ -180,7 +180,7 @@ services:
   frontend-emerald:
     build:
       context: ./repos/Emerald/Itenium.SkillForge/frontend
-      dockerfile: ../../Dockerfile.frontend
+      dockerfile: ../../../../Dockerfile.frontend
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-emerald
@@ -228,7 +228,7 @@ services:
   frontend-crimson:
     build:
       context: ./repos/Crimson/Itenium.SkillForge/frontend
-      dockerfile: ../../Dockerfile.frontend
+      dockerfile: ../../../../Dockerfile.frontend
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-crimson
@@ -276,7 +276,7 @@ services:
   frontend-midnightblue:
     build:
       context: ./repos/MidnightBlue/Itenium.SkillForge/frontend
-      dockerfile: ../../Dockerfile.frontend
+      dockerfile: ../../../../Dockerfile.frontend
       args:
         NPM_TOKEN: ${GITHUB_TOKEN}
     container_name: runner-frontend-midnightblue
