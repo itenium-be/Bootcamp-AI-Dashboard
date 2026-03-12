@@ -19,7 +19,6 @@
       <span class="refresh-countdown" id="countdown"></span>
       <button onclick="refresh()">Refresh Now</button>
       <button onclick="showTeamModal()">Team Names</button>
-      <button onclick="showTokenModal()">Set Token</button>
     </div>
   </header>
 
@@ -35,22 +34,6 @@
 
   <div class="teams-grid" id="teams-grid">
     <div class="loading">Loading...</div>
-  </div>
-
-  <div class="token-modal hidden" id="token-modal">
-    <div class="token-dialog">
-      <h2>GitHub Token</h2>
-      <p>
-        Enter a GitHub Personal Access Token to avoid rate limits.
-        Create one at <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link)">github.com/settings/tokens</a>
-        with <code>repo</code> scope (or <code>public_repo</code> for public repos only).
-      </p>
-      <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-      <div class="buttons">
-        <button onclick="hideTokenModal()">Cancel</button>
-        <button class="btn-primary" onclick="saveToken()">Save</button>
-      </div>
-    </div>
   </div>
 
   <div class="token-modal hidden" id="team-modal">
@@ -218,30 +201,6 @@
     const REFRESH_INTERVAL = 120000; // 2 minutes
     let countdownInterval;
     let nextRefresh;
-
-    function getToken() {
-      return localStorage.getItem('github_token') || '';
-    }
-
-    function showTokenModal() {
-      document.getElementById('token-modal').classList.remove('hidden');
-      document.getElementById('token-input').value = getToken();
-    }
-
-    function hideTokenModal() {
-      document.getElementById('token-modal').classList.add('hidden');
-    }
-
-    function saveToken() {
-      const token = document.getElementById('token-input').value.trim();
-      if (token) {
-        localStorage.setItem('github_token', token);
-      } else {
-        localStorage.removeItem('github_token');
-      }
-      hideTokenModal();
-      refresh();
-    }
 
     function showTeamModal() {
       const container = document.getElementById('team-selectors');
