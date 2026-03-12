@@ -81,7 +81,7 @@ button:hover { border-color: var(--text-muted); }
 
 .topboard-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
 }
 
@@ -195,7 +195,7 @@ button:hover { border-color: var(--text-muted); }
 
 .leaderboard-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
 }
 

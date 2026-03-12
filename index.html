@@ -532,12 +532,12 @@
       }
 
       const awards = [
-        { title: 'Token Burner', icon: '🔥', winner: topTokenBurner },
         { title: 'First Commit', icon: '🚀', winner: firstCommit ? { name: firstCommit.name, handle: firstCommit.handle, team: firstCommit.team, teamColor: firstCommit.teamColor, teamLogo: firstCommit.teamLogo, value: getTimeAgo(firstCommit.date) } : null },
         { title: 'Most Commits', icon: '📝', winner: mostCommits ? { name: mostCommits.name, handle: mostCommits.handle, team: mostCommits.team, teamColor: mostCommits.teamColor, teamLogo: mostCommits.teamLogo, value: mostCommits.commits } : null },
         { title: 'Most PRs', icon: '🔀', winner: mostPRs?.prs > 0 ? { name: mostPRs.name, handle: mostPRs.handle, team: mostPRs.team, teamColor: mostPRs.teamColor, teamLogo: mostPRs.teamLogo, value: mostPRs.prs } : null },
         { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.name, handle: largestCommit.handle, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines} lines` } : null },
         { title: 'Most Churn', icon: '🌀', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, handle: mostChurn.handle, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged} lines` } : null },
+        { title: 'Token Burner', icon: '🔥', winner: topTokenBurner },
       ];
 
       const grid = document.getElementById('topboard-grid');
@@ -566,13 +566,8 @@
 
       const categories = [
         {
-          title: 'Tokens Burned',
-          icon: '🔥',
-          getData: (t) => teamUsage?.[t.name]?.total || 0,
-          format: formatTokens,
-        },
-        {
           title: 'Tests Passing',
+          icon: '✅',
           getData: (t) => {
             const be = t.testResults?.backend?.passed || 0;
             const feUnit = t.testResults?.frontend?.unit?.passed || 0;
@@ -582,15 +577,24 @@
         },
         {
           title: 'Total Commits',
+          icon: '📝',
           getData: (t) => t.allCommits?.length || 0,
         },
         {
           title: 'Lines Added',
+          icon: '📈',
           getData: (t) => t.totalLinesAdded || 0,
         },
         {
           title: 'PRs Merged',
+          icon: '🔀',
           getData: (t) => t.mergedPRs?.length || 0,
+        },
+        {
+          title: 'Tokens Burned',
+          icon: '🔥',
+          getData: (t) => teamUsage?.[t.name]?.total || 0,
+          format: formatTokens,
         },
       ];
 
