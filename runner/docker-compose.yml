@@ -1,75 +1,291 @@
 services:
+  # Obsidian - ports 5440/5010/5180
   postgres-obsidian:
     image: postgres:17
-    container_name: bootcamp-db-obsidian
+    container_name: runner-db-obsidian
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
       POSTGRES_DB: skillforge
     ports:
-      - "5433:5432"
+      - "5440:5432"
     volumes:
       - pgdata-obsidian:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  backend-obsidian:
+    build:
+      context: ./repos/Obsidian/Itenium.SkillForge/backend
+      args:
+        NUGET_USER: ${GITHUB_USER}
+        NUGET_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-backend-obsidian
+    restart: on-failure
+    ports:
+      - "5010:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-obsidian;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
+    depends_on:
+      postgres-obsidian:
+        condition: service_healthy
+
+  frontend-obsidian:
+    build:
+      context: ./repos/Obsidian/Itenium.SkillForge/frontend
+      dockerfile: ../../Dockerfile.frontend
+      args:
+        NPM_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-frontend-obsidian
+    ports:
+      - "5180:5173"
+    environment:
+      VITE_API_URL: http://localhost:5010
+    depends_on:
+      - backend-obsidian
+
+  # RoyalPurple - ports 5441/5011/5181
   postgres-royalpurple:
     image: postgres:17
-    container_name: bootcamp-db-royalpurple
+    container_name: runner-db-royalpurple
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
       POSTGRES_DB: skillforge
     ports:
-      - "5434:5432"
+      - "5441:5432"
     volumes:
       - pgdata-royalpurple:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  backend-royalpurple:
+    build:
+      context: ./repos/RoyalPurple/Itenium.SkillForge/backend
+      args:
+        NUGET_USER: ${GITHUB_USER}
+        NUGET_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-backend-royalpurple
+    restart: on-failure
+    ports:
+      - "5011:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-royalpurple;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
+    depends_on:
+      postgres-royalpurple:
+        condition: service_healthy
+
+  frontend-royalpurple:
+    build:
+      context: ./repos/RoyalPurple/Itenium.SkillForge/frontend
+      dockerfile: ../../Dockerfile.frontend
+      args:
+        NPM_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-frontend-royalpurple
+    ports:
+      - "5181:5173"
+    environment:
+      VITE_API_URL: http://localhost:5011
+    depends_on:
+      - backend-royalpurple
+
+  # Teal - ports 5442/5012/5182
   postgres-teal:
     image: postgres:17
-    container_name: bootcamp-db-teal
+    container_name: runner-db-teal
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
       POSTGRES_DB: skillforge
     ports:
-      - "5435:5432"
+      - "5442:5432"
     volumes:
       - pgdata-teal:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  backend-teal:
+    build:
+      context: ./repos/Teal/Itenium.SkillForge/backend
+      args:
+        NUGET_USER: ${GITHUB_USER}
+        NUGET_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-backend-teal
+    restart: on-failure
+    ports:
+      - "5012:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-teal;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
+    depends_on:
+      postgres-teal:
+        condition: service_healthy
+
+  frontend-teal:
+    build:
+      context: ./repos/Teal/Itenium.SkillForge/frontend
+      dockerfile: ../../Dockerfile.frontend
+      args:
+        NPM_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-frontend-teal
+    ports:
+      - "5182:5173"
+    environment:
+      VITE_API_URL: http://localhost:5012
+    depends_on:
+      - backend-teal
+
+  # Emerald - ports 5443/5013/5183
   postgres-emerald:
     image: postgres:17
-    container_name: bootcamp-db-emerald
+    container_name: runner-db-emerald
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
       POSTGRES_DB: skillforge
     ports:
-      - "5436:5432"
+      - "5443:5432"
     volumes:
       - pgdata-emerald:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  backend-emerald:
+    build:
+      context: ./repos/Emerald/Itenium.SkillForge/backend
+      args:
+        NUGET_USER: ${GITHUB_USER}
+        NUGET_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-backend-emerald
+    restart: on-failure
+    ports:
+      - "5013:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-emerald;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
+    depends_on:
+      postgres-emerald:
+        condition: service_healthy
+
+  frontend-emerald:
+    build:
+      context: ./repos/Emerald/Itenium.SkillForge/frontend
+      dockerfile: ../../Dockerfile.frontend
+      args:
+        NPM_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-frontend-emerald
+    ports:
+      - "5183:5173"
+    environment:
+      VITE_API_URL: http://localhost:5013
+    depends_on:
+      - backend-emerald
+
+  # Crimson - ports 5444/5014/5184
   postgres-crimson:
     image: postgres:17
-    container_name: bootcamp-db-crimson
+    container_name: runner-db-crimson
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
       POSTGRES_DB: skillforge
     ports:
-      - "5437:5432"
+      - "5444:5432"
     volumes:
       - pgdata-crimson:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  backend-crimson:
+    build:
+      context: ./repos/Crimson/Itenium.SkillForge/backend
+      args:
+        NUGET_USER: ${GITHUB_USER}
+        NUGET_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-backend-crimson
+    restart: on-failure
+    ports:
+      - "5014:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-crimson;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
+    depends_on:
+      postgres-crimson:
+        condition: service_healthy
+
+  frontend-crimson:
+    build:
+      context: ./repos/Crimson/Itenium.SkillForge/frontend
+      dockerfile: ../../Dockerfile.frontend
+      args:
+        NPM_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-frontend-crimson
+    ports:
+      - "5184:5173"
+    environment:
+      VITE_API_URL: http://localhost:5014
+    depends_on:
+      - backend-crimson
+
+  # MidnightBlue - ports 5445/5015/5185
   postgres-midnightblue:
     image: postgres:17
-    container_name: bootcamp-db-midnightblue
+    container_name: runner-db-midnightblue
     environment:
       POSTGRES_USER: skillforge
       POSTGRES_PASSWORD: skillforge
       POSTGRES_DB: skillforge
     ports:
-      - "5438:5432"
+      - "5445:5432"
     volumes:
       - pgdata-midnightblue:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend-midnightblue:
+    build:
+      context: ./repos/MidnightBlue/Itenium.SkillForge/backend
+      args:
+        NUGET_USER: ${GITHUB_USER}
+        NUGET_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-backend-midnightblue
+    restart: on-failure
+    ports:
+      - "5015:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-midnightblue;Port=5432;Database=skillforge;Username=skillforge;Password=skillforge
+    depends_on:
+      postgres-midnightblue:
+        condition: service_healthy
+
+  frontend-midnightblue:
+    build:
+      context: ./repos/MidnightBlue/Itenium.SkillForge/frontend
+      dockerfile: ../../Dockerfile.frontend
+      args:
+        NPM_TOKEN: ${GITHUB_TOKEN}
+    container_name: runner-frontend-midnightblue
+    ports:
+      - "5185:5173"
+    environment:
+      VITE_API_URL: http://localhost:5015
+    depends_on:
+      - backend-midnightblue
 
 volumes:
   pgdata-obsidian:

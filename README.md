@@ -11,17 +11,32 @@ bunx serve -l 8080
 
 ## Runner
 
-Runs all team applications locally.
+Runs all 6 team applications via Docker.
 
-```powershell
+```bash
 cd runner
 
-# Pull latest & install dependencies
-.\update.ps1
+# Setup credentials
+cp .env.example .env
+# Edit .env with GITHUB_USER and GITHUB_TOKEN (read:packages scope)
 
-# Start all (databases + frontend + backend)
-.\start.ps1
+# Pull latest submodules
+git submodule update --remote --merge
+
+# Start all teams
+docker compose up -d --build
 
 # Stop all
-.\start.ps1 -StopOnly
+docker compose down
 ```
+
+| Team         | Frontend | Backend | DB   |
+|--------------|----------|---------|------|
+| Obsidian     | :5180    | :5010   | :5440|
+| RoyalPurple  | :5181    | :5011   | :5441|
+| Teal         | :5182    | :5012   | :5442|
+| Emerald      | :5183    | :5013   | :5443|
+| Crimson      | :5184    | :5014   | :5444|
+| MidnightBlue | :5185    | :5015   | :5445|
+
+Main codebase uses `:5173/:5000/:5433` - no conflicts.

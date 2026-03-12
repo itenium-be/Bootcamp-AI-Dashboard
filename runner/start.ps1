@@ -6,6 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $logsDir = Join-Path $scriptDir "logs"
+$pidFile = Join-Path $scriptDir "pids.json"
 
 if (-not (Test-Path $logsDir)) {
     New-Item -ItemType Directory -Path $logsDir | Out-Null
@@ -20,16 +21,30 @@ $teams = @(
     @{ Name = "MidnightBlue";  FrontendPort = 5178; BackendPort = 5005; DbPort = 5438 }
 )
 
-# Stop any existing processes
-Write-Host "Stopping existing processes..." -ForegroundColor Yellow
-Get-Process -Name "dotnet" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+function Stop-TrackedProcesses {
+    if (Test-Path $pidFile) {
+        $pids = Get-Content $pidFile | ConvertFrom-Json
+        foreach ($pid in $pids) {
+            $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+            if ($proc) {
+                Write-Host "Stopping process $pid ($($proc.Name))..." -ForegroundColor Yellow
+                Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+            }
+        }
+        Remove-Item $pidFile -Force
+    }
+    docker compose -f "$scriptDir\docker-compose.yml" down 2>$null
+}
 
 if ($StopOnly) {
-    docker compose -f "$scriptDir\docker-compose.yml" down
+    Write-Host "Stopping processes..." -ForegroundColor Yellow
+    Stop-TrackedProcesses
     Write-Host "All processes stopped." -ForegroundColor Green
     exit 0
 }
+
+# Stop any previously started processes
+Stop-TrackedProcesses
 
 # Start databases
 Write-Host "Starting databases..." -ForegroundColor Cyan
@@ -37,6 +52,9 @@ docker compose -f "$scriptDir\docker-compose.yml" up -d
 
 Write-Host "Waiting for databases to be ready..." -ForegroundColor Gray
 Start-Sleep -Seconds 5
+
+# Track PIDs
+$allPids = @()
 
 # Start all teams
 foreach ($team in $teams) {
@@ -51,12 +69,17 @@ foreach ($team in $teams) {
     # Start backend with custom DB port via cmd to properly pass env vars
     $connStr = "Host=localhost;Port=$($team.DbPort);Database=skillforge;Username=skillforge;Password=skillforge"
     $backendLog = Join-Path $logsDir "$name-backend.log"
-    Start-Process cmd -ArgumentList "/c", "set ConnectionStrings__DefaultConnection=$connStr && dotnet run --project `"$webApiPath`" --urls http://localhost:$($team.BackendPort) > `"$backendLog`" 2>&1" -WindowStyle Hidden
+    $backendProc = Start-Process cmd -ArgumentList "/c", "set ConnectionStrings__DefaultConnection=$connStr && dotnet run --project `"$webApiPath`" --urls http://localhost:$($team.BackendPort) > `"$backendLog`" 2>&1" -WindowStyle Hidden -PassThru
+    $allPids += $backendProc.Id
 
     # Start frontend with custom API URL
     $frontendLog = Join-Path $logsDir "$name-frontend.log"
-    Start-Process cmd -ArgumentList "/c", "set VITE_API_URL=http://localhost:$($team.BackendPort) && cd /d `"$frontendPath`" && bun run dev --port $($team.FrontendPort) > `"$frontendLog`" 2>&1" -WindowStyle Hidden
+    $frontendProc = Start-Process cmd -ArgumentList "/c", "set VITE_API_URL=http://localhost:$($team.BackendPort) && cd /d `"$frontendPath`" && bun run dev --port $($team.FrontendPort) > `"$frontendLog`" 2>&1" -WindowStyle Hidden -PassThru
+    $allPids += $frontendProc.Id
 }
+
+# Save PIDs
+$allPids | ConvertTo-Json | Set-Content $pidFile
 
 Write-Host ""
 Write-Host "All teams started!" -ForegroundColor Green
