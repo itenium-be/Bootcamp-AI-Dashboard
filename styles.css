@@ -313,3 +313,49 @@ button:hover { border-color: var(--text-muted); }
   font-size: 0.75rem;
   color: var(--text-muted);
 }
+
+.test-results {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.test-result {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.test-label {
+  color: var(--text-muted);
+}
+
+.test-passed {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.test-total {
+  color: var(--text-muted);
+}
+
+.test-failed {
+  color: var(--danger);
+  font-size: 0.75rem;
+}
+
+.test-pending {
+  color: var(--text-muted);
+}
+
+.test-result.test-pass {
+  border: 1px solid var(--success);
+}
+
+.test-result.test-fail {
+  border: 1px solid var(--danger);
+}
