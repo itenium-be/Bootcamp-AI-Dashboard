@@ -15,6 +15,7 @@
       <h1>SkillForge AI Bootcamp</h1>
     </div>
     <div class="controls">
+      <span class="server-address" id="server-address"></span>
       <span class="refresh-countdown" id="countdown"></span>
       <button onclick="refresh()">Refresh Now</button>
       <button onclick="showTeamModal()">Team Names</button>
@@ -525,7 +526,7 @@
                 <div class="leaderboard-item ${idx === 0 ? 'leader' : ''}">
                   <div class="leaderboard-names">
                     ${actualTeam ? `<span class="leaderboard-actual">${actualTeam.name}</span>` : ''}
-                    <span class="leaderboard-color" style="border-color: ${t.color}; color: ${t.color}">${t.name}</span>
+                    <span class="leaderboard-color" style="border-color: ${t.color}; color: ${t.color}; text-align: center">${t.name}</span>
                   </div>
                   <span class="score">${cat.getData(t)}</span>
                 </div>
@@ -644,7 +645,7 @@
             ` : ''}
           </div>
           ${actualTeam ? `
-            <div class="team-footer">
+            <div class="team-footer" style="height: 100%">
               <div class="team-tagline">${actualTeam.tagline}</div>
               <div class="team-description">${actualTeam.description}</div>
             </div>
@@ -682,6 +683,9 @@
 
       startCountdown();
     }
+
+    // Display server address
+    document.getElementById('server-address').textContent = `${location.hostname}:8080`;
 
     // Initial load
     if (!getToken()) {
