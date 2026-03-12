@@ -35,29 +35,39 @@ const server = Bun.serve({
           keyIdToName[key.id] = key.name;
         }
 
-        // Fetch usage report grouped by API key for the last 30 days
+        // Fetch usage report grouped by API key for the last 24 hours
         const now = new Date();
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const startingAt = thirtyDaysAgo.toISOString();
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const startingAt = oneDayAgo.toISOString();
         const endingAt = now.toISOString();
 
-        const usageData = await fetchAnthropicAdmin(
-          `/v1/organizations/usage_report/messages?starting_at=${startingAt}&ending_at=${endingAt}&group_by[]=api_key&bucket_width=1d`
-        );
-
-        // Aggregate usage per API key
+        // Aggregate usage per API key (handle pagination)
         const usageByKey: Record<string, { input: number; output: number; name: string }> = {};
-        for (const bucket of usageData.data || []) {
-          const keyId = bucket.api_key_id;
-          if (!keyId) continue;
+        let nextPage: string | null = null;
 
-          if (!usageByKey[keyId]) {
-            usageByKey[keyId] = { input: 0, output: 0, name: keyIdToName[keyId] || keyId };
+        do {
+          const pageParam = nextPage ? `&page=${nextPage}` : '';
+          const usageData = await fetchAnthropicAdmin(
+            `/v1/organizations/usage_report/messages?starting_at=${startingAt}&ending_at=${endingAt}&group_by[]=api_key_id&bucket_width=1h${pageParam}`
+          );
+
+          // Each bucket has a results array with the grouped data
+          for (const bucket of usageData.data || []) {
+            for (const result of bucket.results || []) {
+              const keyId = result.api_key_id;
+              if (!keyId) continue;
+
+              if (!usageByKey[keyId]) {
+                usageByKey[keyId] = { input: 0, output: 0, name: keyIdToName[keyId] || keyId };
+              }
+              usageByKey[keyId].input += result.input_tokens || 0;
+              usageByKey[keyId].input += result.input_cached_tokens || 0;
+              usageByKey[keyId].output += result.output_tokens || 0;
+            }
           }
-          usageByKey[keyId].input += bucket.input_tokens || 0;
-          usageByKey[keyId].input += bucket.input_cached_tokens || 0;
-          usageByKey[keyId].output += bucket.output_tokens || 0;
-        }
+
+          nextPage = usageData.has_more ? usageData.next_page : null;
+        } while (nextPage);
 
         return new Response(JSON.stringify({ usage: Object.values(usageByKey) }), {
           headers: {
