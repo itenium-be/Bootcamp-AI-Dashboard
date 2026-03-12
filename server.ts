@@ -10,8 +10,8 @@ const REPOS = [
   { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#6366f1', logo: 'logos/Team-MidnightBlue.png', frontendPort: 5185 },
 ];
 
-// const PREP_COMMIT_SHA = '731e4ad50e34e6587258a6a67ceeb895e10b5366';
-const PREP_COMMIT_SHA = 'a5211f773b7917e5407fae76a5b5c77aa17bbb9a';
+const PREP_COMMIT_SHA = '731e4ad50e34e6587258a6a67ceeb895e10b5366';
+// const PREP_COMMIT_SHA = 'a5211f773b7917e5407fae76a5b5c77aa17bbb9a';
 
 import JSZip from 'jszip';
 
