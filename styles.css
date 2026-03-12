@@ -507,6 +507,10 @@ button:hover { border-color: var(--text-muted); }
   color: var(--text-muted);
 }
 
+.refresh-icon {
+  display: none;
+}
+
 .test-results {
   display: flex;
   gap: 16px;
@@ -685,8 +689,22 @@ button:hover { border-color: var(--text-muted); }
   }
 
   .server-address,
-  .team-names-btn {
+  .team-names-btn,
+  .refresh-countdown {
     display: none;
+  }
+
+  .refresh-text {
+    display: none;
+  }
+
+  .refresh-icon {
+    display: inline;
+    font-size: 1.25rem;
+  }
+
+  .refresh-btn {
+    padding: 6px 10px;
   }
 
   h1 {
