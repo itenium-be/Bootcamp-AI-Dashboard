@@ -1,6 +1,9 @@
 # Update all team repositories
 $ErrorActionPreference = "Stop"
 
+Write-Host "Pruning stale remote references..." -ForegroundColor Cyan
+git submodule foreach --recursive git remote prune origin 2>&1 | Out-Null
+
 Write-Host "Resetting local changes in submodules..." -ForegroundColor Cyan
 git submodule foreach --recursive git checkout .
 
