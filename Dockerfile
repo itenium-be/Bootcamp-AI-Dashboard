@@ -10,6 +10,9 @@ COPY styles.css .
 COPY favicon.png .
 COPY favicon.svg .
 COPY logos/ logos/
+COPY data-cache.json .
+COPY metrics-history.json .
+COPY team-names.json .
 
 EXPOSE 8080
 

@@ -253,6 +253,7 @@
       totalCommits: 'Total Commits',
       linesAdded: 'Lines Added',
       mergedPRs: 'PRs Merged',
+      tokensBurned: 'Tokens Burned',
     };
 
     async function toggleMetricsChart(key) {
@@ -588,6 +589,7 @@
         ...(Object.values(teamUsage || {}).some(u => u.total > 0) ? [{
           title: 'Tokens Burned',
           icon: '🔥',
+          chartKey: 'tokensBurned',
           getData: (t) => teamUsage?.[t.name]?.total || 0,
           format: formatTokens,
         }] : []),

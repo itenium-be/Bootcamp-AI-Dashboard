@@ -20,6 +20,24 @@ const CACHE_TTL_MS = 30 * 1000; // 30 seconds
 let cachedData: { teams: any[]; tokenUsage: any[] } | null = null;
 let cacheTimestamp = 0;
 
+const TEAM_MEMBERS: Record<string, string[]> = {
+  'Obsidian': ['Willem Meylemans', 'Igor Romy', 'Timo Versonnen', 'Onur Bugdayci', 'Jochem Van Hespen'],
+  'RoyalPurple': ['Bo Rosseel', 'Joris Wijnant', 'Thomas De Brauwer', 'Michael Dumortier', 'Tim Ranson', 'Tom Marroyen'],
+  'Teal': ['Steven Robijns', 'Pierre Bossé', 'Nina Van Hoof', 'Bert Maes', 'Tyara Schetgens'],
+  'Emerald': ['Jelle Muijzelaar', 'Bert Vervaele', 'Yannick Manfroy', 'Bernard Giorgino', 'Remco Verbruggen', 'Gert Claeskens'],
+  'Crimson': ['Heleen de Meue', 'Jonathan Rasquin', 'David Sverdlov', 'Jelle Maes', 'Bram De Plekker'],
+  'MidnightBlue': ['Alexander Ryckeboer', 'Nicolas Legrand', "Joachim D'hondt", 'Jos Van Loock', 'Tom Mennes'],
+};
+
+function getTeamForPerson(name: string): string | null {
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  for (const [team, members] of Object.entries(TEAM_MEMBERS)) {
+    if (members.some(m => m.toLowerCase() === lower)) return team;
+  }
+  return null;
+}
+
 // Metrics history storage (10-min snapshots, max 144 = 24h)
 interface MetricsSnapshot {
   timestamp: number;
@@ -29,6 +47,7 @@ interface MetricsSnapshot {
     totalCommits: number;
     linesAdded: number;
     mergedPRs: number;
+    tokensBurned: number;
   }[];
 }
 
@@ -110,6 +129,14 @@ async function saveDataCache(data: { teams: any[]; tokenUsage: any[] }) {
 
 async function recordMetricsHistory() {
   if (!cachedData || cachedData.teams.length === 0) return;
+
+  // Aggregate token usage per team
+  const tokensByTeam: Record<string, number> = {};
+  for (const entry of cachedData.tokenUsage || []) {
+    const team = getTeamForPerson(entry.name);
+    if (team) tokensByTeam[team] = (tokensByTeam[team] || 0) + (entry.input || 0) + (entry.output || 0);
+  }
+
   const snapshot: MetricsSnapshot = {
     timestamp: Date.now(),
     teams: cachedData.teams
@@ -123,6 +150,7 @@ async function recordMetricsHistory() {
         totalCommits: t.totalCommits || 0,
         linesAdded: t.totalLinesAdded || 0,
         mergedPRs: t.mergedPRsCount || 0,
+        tokensBurned: tokensByTeam[t.name] || 0,
       })),
   };
   metricsHistory.push(snapshot);
