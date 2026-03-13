@@ -17,8 +17,27 @@ import JSZip from 'jszip';
 
 // Cache configuration
 const CACHE_TTL_MS = 30 * 1000; // 30 seconds
+const RATE_LIMIT_BACKOFF_MS = 5 * 60 * 1000; // 5 minutes — stop hammering GitHub when rate limited
 let cachedData: { teams: any[]; tokenUsage: any[] } | null = null;
 let cacheTimestamp = 0;
+let rateLimitedUntil = 0;
+
+// Last known good data per team — only updated on successful (non-error) fetches
+const lastGoodTeamData: Record<string, any> = {};
+let lastGoodFetchAt = 0; // Unix ms timestamp of the last successful GitHub fetch
+
+// Skeleton team data — shown when no cache exists and API is unavailable
+function teamSkeleton(team: typeof REPOS[0]) {
+  return {
+    ...team,
+    commits: [], allCommits: [], allCommitStats: [],
+    openIssues: [], openIssuesCount: 0, closedIssuesCount: 0, allIssues: [],
+    openPRs: [], openPRsCount: 0, mergedPRs: [], mergedPRsCount: 0,
+    lastPush: null, buildStatus: 'unknown', testResults: null,
+    contributorStats: [], totalCommits: 0, totalLinesAdded: 0, totalLinesDeleted: 0,
+    error: null,
+  };
+}
 
 const TEAM_MEMBERS: Record<string, string[]> = {
   'Obsidian': ['Willem Meylemans', 'Igor Romy', 'Timo Versonnen', 'Onur Bugdayci', 'Jochem Van Hespen'],
@@ -111,7 +130,16 @@ async function loadDataCache(): Promise<{ teams: any[]; tokenUsage: any[] } | nu
 
 async function saveDataCache(data: { teams: any[]; tokenUsage: any[] }) {
   try {
-    await Bun.write(DATA_CACHE_FILE, JSON.stringify(data));
+    // Never overwrite good cached data with error entries — preserve last known good per team
+    const existing = await loadDataCache();
+    const teamsToSave = data.teams.map((team: any) => {
+      if (team.error) {
+        const prev = existing?.teams.find((t: any) => t.name === team.name && !t.error);
+        return prev || team;
+      }
+      return team;
+    });
+    await Bun.write(DATA_CACHE_FILE, JSON.stringify({ teams: teamsToSave, tokenUsage: data.tokenUsage }));
   } catch (e) {
     console.error('Failed to save data cache:', e);
   }
@@ -123,6 +151,11 @@ async function saveDataCache(data: { teams: any[]; tokenUsage: any[] }) {
   const saved = await loadDataCache();
   if (saved) {
     cachedData = saved;
+    // Seed lastGoodTeamData from disk so we have a fallback from the very first request
+    for (const team of saved.teams) {
+      if (!team.error) lastGoodTeamData[team.name] = team;
+    }
+    if ((saved as any).lastGoodFetchAt) lastGoodFetchAt = (saved as any).lastGoodFetchAt;
     // Don't set cacheTimestamp so first request triggers a fresh fetch
   }
 })();
@@ -508,31 +541,61 @@ const server = Bun.serve({
     if (url.pathname === "/api/data") {
       try {
         const now = Date.now();
-        if (!cachedData || now - cacheTimestamp > CACHE_TTL_MS) {
+        const cacheStale = !cachedData || now - cacheTimestamp > CACHE_TTL_MS;
+        const backingOff = now < rateLimitedUntil;
+
+        if (cacheStale && !backingOff) {
           console.log("Cache miss - fetching fresh data...");
           try {
             const [teamsData, tokenUsage] = await Promise.all([
               Promise.all(REPOS.map(fetchTeamData)),
               fetchTokenUsage(),
             ]);
-            cachedData = { teams: teamsData, tokenUsage };
+
+            // Track whether any team was rate-limited
+            const anyRateLimited = teamsData.some((t: any) => t.error?.includes('403'));
+            if (anyRateLimited) {
+              rateLimitedUntil = now + RATE_LIMIT_BACKOFF_MS;
+              console.log(`Rate limited — backing off for ${RATE_LIMIT_BACKOFF_MS / 60000} minutes`);
+            }
+
+            // Update lastGoodTeamData for teams that fetched successfully
+            for (const team of teamsData) {
+              if (!team.error) {
+                lastGoodTeamData[team.name] = team;
+                lastGoodFetchAt = now;
+              }
+            }
+
+            // For each team: use fresh data if OK, fall back to last good data, else skeleton
+            const mergedTeams = teamsData.map((team: any) => {
+              if (!team.error) return team;
+              if (lastGoodTeamData[team.name]) {
+                console.log(`[${team.name}] API error (${team.error}) — serving cached data`);
+                return lastGoodTeamData[team.name];
+              }
+              console.log(`[${team.name}] API error (${team.error}) — no cache, serving skeleton`);
+              return teamSkeleton(team);
+            });
+
+            cachedData = { teams: mergedTeams, tokenUsage, lastGoodFetchAt } as any;
             cacheTimestamp = now;
             recordMetricsHistory();
             await saveDataCache(cachedData);
-          } catch (fetchError) {
-            console.error("Fetch failed, falling back to disk cache:", fetchError);
-            if (!cachedData) {
-              const saved = await loadDataCache();
-              if (saved) {
-                cachedData = saved;
-                console.log("Serving stale data from disk cache");
-              } else {
-                throw fetchError;
-              }
+          } catch (fetchError: any) {
+            console.error("Fetch failed:", fetchError);
+            rateLimitedUntil = now + RATE_LIMIT_BACKOFF_MS;
+            // Keep existing cachedData if available; otherwise build from lastGoodTeamData / skeletons
+            if (!cachedData || cachedData.teams.length === 0) {
+              const teams = REPOS.map(r => lastGoodTeamData[r.name] ?? teamSkeleton(r));
+              cachedData = { teams, tokenUsage: [], lastGoodFetchAt } as any;
             }
+            cacheTimestamp = now;
           }
+        } else if (backingOff) {
+          console.log(`Rate-limit backoff active — ${Math.round((rateLimitedUntil - now) / 1000)}s remaining`);
         } else {
-          console.log(`Cache hit - ${Math.round((CACHE_TTL_MS - (now - cacheTimestamp)) / 1000)}s remaining`);
+          console.log(`Cache hit — ${Math.round((CACHE_TTL_MS - (now - cacheTimestamp)) / 1000)}s remaining`);
         }
 
         return new Response(JSON.stringify(cachedData), {

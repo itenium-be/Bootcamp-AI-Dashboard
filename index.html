@@ -22,6 +22,10 @@
     </div>
   </header>
 
+  <div class="stale-banner hidden" id="stale-banner">
+    <span id="stale-banner-text"></span>
+  </div>
+
   <div class="topboard" id="topboard">
     <h2>Hall of Fame</h2>
     <div class="topboard-grid" id="topboard-grid"></div>
@@ -629,19 +633,16 @@
 
     function renderTeamCard(team) {
       if (team.error) {
-        return `
-          <div class="team-card">
-            <div class="team-header">
-              <div class="team-name-title">
-                <img src="${team.logo}" alt="${team.name}" class="team-logo">
-                ${team.name}
-              </div>
-            </div>
-            <div class="team-content">
-              <div class="error">${team.error}</div>
-            </div>
-          </div>
-        `;
+        // Server should never send error data — but if it slips through, show a neutral placeholder
+        team = {
+          ...team,
+          commits: [], allCommits: [], allCommitStats: [],
+          openIssues: [], openIssuesCount: 0, closedIssuesCount: 0, allIssues: [],
+          openPRs: [], openPRsCount: 0, mergedPRs: [], mergedPRsCount: 0,
+          lastPush: null, buildStatus: 'unknown', testResults: null,
+          contributorStats: [], totalCommits: 0,
+          error: null,
+        };
       }
 
       const buildClass = getBuildStatusClass(team.buildStatus);
@@ -862,6 +863,20 @@
         const teamUsage = aggregateUsageByTeam(tokenUsage);
         latestTeamsData = teamsData;
         buildAvatarMap(teamsData);
+
+        const banner = document.getElementById('stale-banner');
+        const bannerText = document.getElementById('stale-banner-text');
+        const fetchedAt = data.lastGoodFetchAt;
+        const isStale = !fetchedAt || (Date.now() - fetchedAt > 60 * 1000);
+        if (isStale && fetchedAt) {
+          bannerText.textContent = `Showing cached data — last live update: ${getTimeAgo(new Date(fetchedAt).toISOString())}`;
+          banner.classList.remove('hidden');
+        } else if (isStale && !fetchedAt) {
+          bannerText.textContent = 'Showing cached data — GitHub API unavailable';
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
 
         renderTopboard(teamsData, tokenUsage);
         renderLeaderboard(teamsData, teamUsage);

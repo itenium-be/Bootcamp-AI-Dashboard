@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -s http://localhost:8080/api/data)"
+      "Bash(curl -s http://localhost:8080/api/data)",
+      "Read(//mnt/c/Users/micha/IdeaProjects/**)",
+      "Bash(node -e \"const d = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''data-cache.json'',''utf8''\\)\\); d.teams.forEach\\(t => console.log\\(t.name, t.error || ''OK''\\)\\)\")",
+      "Bash(node -e \"const d = JSON.parse\\(require\\('fs'\\).readFileSync\\('C:/Users/micha/IdeaProjects/Bootcamp-AI-Dashboard/data-cache.json','utf8'\\)\\); d.teams.forEach\\(t => console.log\\(t.name, t.error || 'OK'\\)\\)\")",
+      "Bash(node -e \"require\\('fs'\\).writeFileSync\\('C:/Users/micha/IdeaProjects/Bootcamp-AI-Dashboard/data-cache.json', JSON.stringify\\({teams:[], tokenUsage:[]}\\)\\)\")",
+      "Bash(netstat -ano | grep 8080 | head -5)"
     ]
   }
 }

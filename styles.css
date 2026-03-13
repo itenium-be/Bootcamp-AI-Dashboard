@@ -31,6 +31,18 @@ header {
 
 h1 { font-size: 1.5rem; }
 
+.stale-banner {
+  background: #78350f;
+  border: 1px solid #d97706;
+  color: #fde68a;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  text-align: center;
+}
+.stale-banner.hidden { display: none; }
+
 .header-title {
   display: flex;
   align-items: center;
@@ -318,6 +330,8 @@ button:hover { border-color: var(--text-muted); }
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
 .team-color {
@@ -331,6 +345,7 @@ button:hover { border-color: var(--text-muted); }
   height: 32px;
   border-radius: 4px;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
 .team-status {
@@ -624,16 +639,24 @@ button:hover { border-color: var(--text-muted); }
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .actual-team-name {
   font-weight: 600;
   font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .color-team-name {
   font-size: 0.8rem;
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .color-team-name:hover {
