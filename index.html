@@ -597,6 +597,7 @@
       grid.innerHTML = categories.map((cat) => {
         const sorted = [...validTeams].sort((a, b) => cat.getData(b) - cat.getData(a));
         const winner = sorted[0];
+        if (!winner) return '';
         const winnerScore = cat.getData(winner);
         const bgStyle = winnerScore > 0 ? `style="background-image: url('${winner.logo}')"` : '';
         const formatFn = cat.format || (v => v);

@@ -34,6 +34,7 @@ interface MetricsSnapshot {
 
 const METRICS_HISTORY_FILE = import.meta.dir + '/metrics-history.json';
 const TEAM_NAMES_FILE = import.meta.dir + '/team-names.json';
+const DATA_CACHE_FILE = import.meta.dir + '/data-cache.json';
 
 let teamNamesMapping: Record<string, string> = {};
 
@@ -75,8 +76,37 @@ async function saveMetricsHistory() {
 
 let metricsHistory: MetricsSnapshot[] = [];
 
-// Load persisted history on startup
-(async () => { metricsHistory = await loadMetricsHistory(); })();
+async function loadDataCache(): Promise<{ teams: any[]; tokenUsage: any[] } | null> {
+  try {
+    const file = Bun.file(DATA_CACHE_FILE);
+    if (file.size > 0) {
+      const data = JSON.parse(await file.text());
+      console.log('Loaded data cache from disk');
+      return data;
+    }
+  } catch {
+    // File doesn't exist yet or is invalid
+  }
+  return null;
+}
+
+async function saveDataCache(data: { teams: any[]; tokenUsage: any[] }) {
+  try {
+    await Bun.write(DATA_CACHE_FILE, JSON.stringify(data));
+  } catch (e) {
+    console.error('Failed to save data cache:', e);
+  }
+}
+
+// Load persisted history and data cache on startup
+(async () => {
+  metricsHistory = await loadMetricsHistory();
+  const saved = await loadDataCache();
+  if (saved) {
+    cachedData = saved;
+    // Don't set cacheTimestamp so first request triggers a fresh fetch
+  }
+})();
 
 async function recordMetricsHistory() {
   if (!cachedData || cachedData.teams.length === 0) return;
@@ -452,13 +482,27 @@ const server = Bun.serve({
         const now = Date.now();
         if (!cachedData || now - cacheTimestamp > CACHE_TTL_MS) {
           console.log("Cache miss - fetching fresh data...");
-          const [teamsData, tokenUsage] = await Promise.all([
-            Promise.all(REPOS.map(fetchTeamData)),
-            fetchTokenUsage(),
-          ]);
-          cachedData = { teams: teamsData, tokenUsage };
-          cacheTimestamp = now;
-          recordMetricsHistory();
+          try {
+            const [teamsData, tokenUsage] = await Promise.all([
+              Promise.all(REPOS.map(fetchTeamData)),
+              fetchTokenUsage(),
+            ]);
+            cachedData = { teams: teamsData, tokenUsage };
+            cacheTimestamp = now;
+            recordMetricsHistory();
+            await saveDataCache(cachedData);
+          } catch (fetchError) {
+            console.error("Fetch failed, falling back to disk cache:", fetchError);
+            if (!cachedData) {
+              const saved = await loadDataCache();
+              if (saved) {
+                cachedData = saved;
+                console.log("Serving stale data from disk cache");
+              } else {
+                throw fetchError;
+              }
+            }
+          }
         } else {
           console.log(`Cache hit - ${Math.round((CACHE_TTL_MS - (now - cacheTimestamp)) / 1000)}s remaining`);
         }

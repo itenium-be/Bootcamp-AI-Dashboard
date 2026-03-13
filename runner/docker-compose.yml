@@ -15,6 +15,9 @@ services:
       - ../styles.css:/app/styles.css
       - ../server.ts:/app/server.ts
       - ../logos:/app/logos
+      - ../data-cache.json:/app/data-cache.json
+      - ../metrics-history.json:/app/metrics-history.json
+      - ../team-names.json:/app/team-names.json
     command: bun --watch run server.ts
     restart: unless-stopped
 
