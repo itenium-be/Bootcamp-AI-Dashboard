@@ -165,13 +165,17 @@ button:hover { border-color: var(--text-muted); }
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 1rem;
+  font-size: clamp(0.45rem, 1.2vw, 1rem);
   font-weight: 600;
-  padding: 6px 14px;
+  padding: clamp(2px, 0.4vw, 6px) clamp(4px, 0.9vw, 14px);
   border-radius: 14px;
   background: var(--card-bg);
   border: 2px solid currentColor;
   z-index: 2;
+  max-width: calc(100% - 8px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .award-team span {
@@ -983,9 +987,10 @@ button:hover { border-color: var(--text-muted); }
   }
 
   .award-team {
-    font-size: 0.65rem;
-    padding: 3px 8px;
     top: 6px;
+    /* Shift right so the badge clears the emoji icon at top-left */
+    left: calc(50% + 12px);
+    max-width: calc(100% - 36px);
   }
 
   .award-value span {
