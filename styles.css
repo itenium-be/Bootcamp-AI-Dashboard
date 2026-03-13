@@ -136,6 +136,10 @@ button:hover { border-color: var(--text-muted); }
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .award-handle {
@@ -666,6 +670,18 @@ button:hover { border-color: var(--text-muted); }
   line-height: 1.4;
 }
 
+.contributor-avatar {
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.team-member-entry {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  margin-bottom: 2px;
+}
+
 .team-members {
   margin-top: 12px;
   padding-top: 12px;
@@ -673,11 +689,16 @@ button:hover { border-color: var(--text-muted); }
   font-size: 0.85rem;
   color: var(--text);
   line-height: 1.5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
 }
 
 .members-label {
   font-weight: 600;
   color: var(--text-muted);
+  margin-right: 6px;
 }
 
 /* Hall of Fame color team (fallback) */

@@ -135,12 +135,28 @@
       { id: 'main-branch-pushers', name: 'The Main Branch Pushers', tagline: 'No staging, no fear.', description: 'The Main Branch Pushers live on the edge, merging code straight into main and proving that speed and confidence are everything in bootcamp chaos.' },
     ];
 
-    function getTeamMapping() {
-      return JSON.parse(localStorage.getItem('team_mapping') || '{}');
+    let teamMappingCache = null;
+
+    async function loadTeamMapping() {
+      try {
+        const res = await fetch('/api/team-mapping');
+        teamMappingCache = await res.json();
+      } catch {
+        teamMappingCache = {};
+      }
     }
 
-    function saveTeamMapping(mapping) {
-      localStorage.setItem('team_mapping', JSON.stringify(mapping));
+    function getTeamMapping() {
+      return teamMappingCache || {};
+    }
+
+    async function saveTeamMapping(mapping) {
+      teamMappingCache = mapping;
+      await fetch('/api/team-mapping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mapping),
+      });
     }
 
     function getActualTeam(colorName) {
@@ -204,6 +220,33 @@
     let currentView = 'cards';
     let currentBoardTeam = null;
     let latestTeamsData = null;
+    let avatarsByHandle = {}; // handle (lowercase) → avatar_url
+
+    function buildAvatarMap(teamsData) {
+      for (const team of teamsData) {
+        for (const commit of (team.allCommits || [])) {
+          if (commit.authorHandle && commit.avatarUrl) {
+            avatarsByHandle[commit.authorHandle.toLowerCase()] = commit.avatarUrl;
+          }
+        }
+        for (const commit of (team.allCommitStats || [])) {
+          if (commit.authorHandle && commit.avatarUrl) {
+            avatarsByHandle[commit.authorHandle.toLowerCase()] = commit.avatarUrl;
+          }
+        }
+      }
+    }
+
+    function getAvatar(handle) {
+      if (!handle) return null;
+      return avatarsByHandle[handle.toLowerCase()] || null;
+    }
+
+    function avatarImg(handle, size = 20) {
+      const src = getAvatar(handle);
+      if (!src) return '';
+      return `<img src="${src}" alt="${handle}" class="contributor-avatar" style="width:${size}px;height:${size}px;border-radius:50%;vertical-align:middle;margin-right:4px;">`;
+    }
 
     const CHART_METRIC_LABELS = {
       testsPassing: 'Tests Passing',
@@ -322,7 +365,7 @@
       document.getElementById('team-modal').classList.add('hidden');
     }
 
-    function saveTeamNames() {
+    async function saveTeamNames() {
       const mapping = {};
       REPOS.forEach(repo => {
         const select = document.getElementById(`team-select-${repo.name}`);
@@ -330,7 +373,7 @@
           mapping[repo.name] = select.value;
         }
       });
-      saveTeamMapping(mapping);
+      await saveTeamMapping(mapping);
       hideTeamModal();
       refresh();
     }
@@ -391,13 +434,13 @@
     function renderTopboard(teamsData, tokenUsage) {
       const validTeams = teamsData.filter(t => !t.error);
 
-      // Collect all commits with stats across teams
+      // Collect all commits with stats across teams (full history)
       const allCommitsWithStats = [];
       const contributorStats = {}; // { name: { commits: 0, prs: 0, linesChanged: 0, team: '', logo: '' } }
 
       for (const team of validTeams) {
-        // Process commits (with stats - only first 3 have detailed stats)
-        for (const commit of (team.commits || [])) {
+        // Process all commits with stats for hall of fame metrics
+        for (const commit of (team.allCommitStats || [])) {
           const handle = commit.authorHandle || 'Unknown';
           const name = resolveName(handle);
           const lines = (commit.additions || 0) + (commit.deletions || 0);
@@ -411,6 +454,10 @@
             date: commit.date,
             message: commit.message || '',
           });
+          if (!contributorStats[name]) {
+            contributorStats[name] = { handle, commits: 0, prs: 0, linesChanged: 0, team: team.name, teamColor: team.color, teamLogo: team.logo };
+          }
+          contributorStats[name].linesChanged += lines;
         }
 
         // Process all commits for count
@@ -434,23 +481,27 @@
         }
       }
 
-      // Calculate lines changed per contributor from commits with stats
-      for (const c of allCommitsWithStats) {
-        if (contributorStats[c.name]) {
-          contributorStats[c.name].linesChanged += c.lines;
+      // Collect all commits (with just date/author) for First Commit detection
+      const allCommitDates = [];
+      for (const team of validTeams) {
+        for (const commit of (team.allCommits || [])) {
+          if (commit.date) {
+            const handle = commit.authorHandle || 'Unknown';
+            allCommitDates.push({ name: resolveName(handle), handle, date: commit.date, team: team.name, teamColor: team.color, teamLogo: team.logo });
+          }
         }
       }
 
       // Find winners
       const largestCommit = allCommitsWithStats.sort((a, b) => b.lines - a.lines)[0];
-      const firstCommit = allCommitsWithStats.filter(c => c.date).sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+      const firstCommit = allCommitDates.sort((a, b) => new Date(a.date) - new Date(b.date))[0];
 
       const contributors = Object.entries(contributorStats).map(([name, stats]) => ({ name, ...stats }));
       const mostCommits = contributors.sort((a, b) => b.commits - a.commits)[0];
       const mostPRs = contributors.sort((a, b) => b.prs - a.prs)[0];
       const mostChurn = contributors.sort((a, b) => b.linesChanged - a.linesChanged)[0];
       const activeContributors = contributors.filter(c => c.commits > 0);
-      const leastChurn = activeContributors.sort((a, b) => a.linesChanged - b.linesChanged)[0];
+      const leastChurn = activeContributors.filter(c => c.linesChanged > 0 || c.prs === 0).sort((a, b) => a.linesChanged - b.linesChanged)[0];
 
       // Find top token burner
       let topTokenBurner = null;
@@ -489,7 +540,7 @@
             <div class="award-icon">${award.icon}</div>
             <div class="award-title">${award.title}</div>
             ${award.winner ? `
-              <div class="award-winner">${award.winner.name}</div>
+              <div class="award-winner">${avatarImg(award.winner.handle, 28)}${award.winner.name}</div>
               <div class="award-handle">@${award.winner.handle}</div>
               <div class="award-team" style="color: ${award.winner.teamColor}">
                 <span>${actualTeam ? actualTeam.name : award.winner.team}</span>
@@ -620,7 +671,7 @@
                   <li class="commit-item">
                     <div class="commit-message">${escapeHtml(c.message || '')}</div>
                     <div class="commit-meta">
-                      <span class="author">${c.author}</span>
+                      <span class="author">${avatarImg(c.authorHandle, 16)}${c.author}</span>
                       <span class="time">${getTimeAgo(c.date)}</span>
                       <span class="commit-stats">
                         <span class="additions">+${c.additions || 0}</span>
@@ -687,7 +738,11 @@
             ` : ''}
             <div class="team-members">
               <span class="members-label">Team:</span>
-              ${(TEAM_MEMBERS[team.name] || []).join(', ')}
+              ${(TEAM_MEMBERS[team.name] || []).map(member => {
+                const cleanName = member.replace(/\s*\([^)]+\)\s*$/, '');
+                const handle = Object.keys(GITHUB_TO_NAME).find(k => GITHUB_TO_NAME[k].toLowerCase() === cleanName.toLowerCase());
+                return `<span class="team-member-entry">${avatarImg(handle, 18)}${member}</span>`;
+              }).join('')}
             </div>
           </div>
         </div>
@@ -803,6 +858,7 @@
         const tokenUsage = data.tokenUsage || [];
         const teamUsage = aggregateUsageByTeam(tokenUsage);
         latestTeamsData = teamsData;
+        buildAvatarMap(teamsData);
 
         renderTopboard(teamsData, tokenUsage);
         renderLeaderboard(teamsData, teamUsage);
@@ -829,8 +885,11 @@
     document.getElementById('server-address').textContent = `${location.hostname}:8080`;
 
     // Initial load
-    refresh();
-    setInterval(refresh, REFRESH_INTERVAL);
+    (async () => {
+      await loadTeamMapping();
+      refresh();
+      setInterval(refresh, REFRESH_INTERVAL);
+    })();
   </script>
 </body>
 </html>

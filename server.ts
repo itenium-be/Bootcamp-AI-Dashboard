@@ -1,6 +1,8 @@
 const ANTHROPIC_ADMIN_KEY = process.env.ANTHROPIC_ADMIN_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_ACTIONS_TOKEN;
 
+const PREP_COMMIT_SHA = '731e4ad50e34e6587258a6a67ceeb895e10b5366';
+
 const REPOS = [
   { name: 'Obsidian', repo: 'itenium-be/Bootcamp-AI-Obsidian', color: '#8b5cf6', logo: 'logos/Team-Obsidian.png', frontendPort: 5180 },
   { name: 'RoyalPurple', repo: 'itenium-be/Bootcamp-AI-RoyalPurple', color: '#7851a9', logo: 'logos/Team-RoyalPurple.png', frontendPort: 5181 },
@@ -10,8 +12,6 @@ const REPOS = [
   { name: 'MidnightBlue', repo: 'itenium-be/Bootcamp-AI-MidnightBlue', color: '#6366f1', logo: 'logos/Team-MidnightBlue.png', frontendPort: 5185 },
 ];
 
-const PREP_COMMIT_SHA = '731e4ad50e34e6587258a6a67ceeb895e10b5366';
-// const PREP_COMMIT_SHA = 'a5211f773b7917e5407fae76a5b5c77aa17bbb9a';
 
 import JSZip from 'jszip';
 
@@ -33,6 +33,23 @@ interface MetricsSnapshot {
 }
 
 const METRICS_HISTORY_FILE = import.meta.dir + '/metrics-history.json';
+const TEAM_NAMES_FILE = import.meta.dir + '/team-names.json';
+
+let teamNamesMapping: Record<string, string> = {};
+
+async function loadTeamNames() {
+  try {
+    const file = Bun.file(TEAM_NAMES_FILE);
+    if (file.size > 0) {
+      teamNamesMapping = JSON.parse(await file.text());
+      console.log('Loaded team names mapping from disk');
+    }
+  } catch {
+    console.log('No team-names.json found, starting with empty mapping');
+  }
+}
+
+await loadTeamNames();
 
 async function loadMetricsHistory(): Promise<MetricsSnapshot[]> {
   try {
@@ -98,6 +115,30 @@ async function fetchGitHub(endpoint: string) {
     throw new Error(`GitHub API error: ${response.status}`);
   }
   return response.json();
+}
+
+async function fetchGitHubAllPages(endpoint: string): Promise<any[]> {
+  const headers: Record<string, string> = {
+    'Accept': 'application/vnd.github.v3+json',
+  };
+  if (GITHUB_TOKEN) {
+    headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
+  }
+  const sep = endpoint.includes('?') ? '&' : '?';
+  let page = 1;
+  const results: any[] = [];
+  while (true) {
+    const response = await fetch(`https://api.github.com${endpoint}${sep}per_page=100&page=${page}`, { headers });
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.status}`);
+    }
+    const data = await response.json();
+    if (!Array.isArray(data) || data.length === 0) break;
+    results.push(...data);
+    if (data.length < 100) break;
+    page++;
+  }
+  return results;
 }
 
 async function fetchAnthropicAdmin(endpoint: string) {
@@ -246,26 +287,28 @@ async function fetchTeamData(team: typeof REPOS[0]) {
   const { repo } = team;
 
   try {
-    const [allCommits, issues, pulls, workflows] = await Promise.all([
-      fetchGitHub(`/repos/${repo}/commits?per_page=50`),
+    const [allCommits, issues, pulls, workflows, rawContributorStats] = await Promise.all([
+      fetchGitHubAllPages(`/repos/${repo}/commits`),
       fetchGitHub(`/repos/${repo}/issues?state=all&per_page=100`),
-      fetchGitHub(`/repos/${repo}/pulls?state=all&per_page=100`),
+      fetchGitHubAllPages(`/repos/${repo}/pulls?state=all`),
       fetchGitHub(`/repos/${repo}/actions/runs?per_page=1`),
+      fetchGitHub(`/repos/${repo}/stats/contributors`).catch(() => []),
     ]);
 
-    // Filter out prep commits
     const prepIndex = allCommits.findIndex((c: any) => c.sha.startsWith(PREP_COMMIT_SHA));
     const commits = prepIndex === -1 ? allCommits : allCommits.slice(0, prepIndex);
 
-    // Fetch commit stats for recent commits (top 3)
-    const recentCommits = await Promise.all(
-      commits.slice(0, 3).map(async (commit: any) => {
+    // Fetch commit stats for all commits
+    const allCommitStats = await Promise.all(
+      commits.map(async (commit: any) => {
+        const avatarUrl = commit.author?.avatar_url || null;
         try {
           const details = await fetchGitHub(`/repos/${repo}/commits/${commit.sha}`);
           return {
             message: commit.commit?.message?.split('\n')[0] || '',
             author: commit.commit?.author?.name || commit.author?.login || 'Unknown',
             authorHandle: commit.author?.login || commit.commit?.author?.name || 'Unknown',
+            avatarUrl,
             date: commit.commit?.author?.date,
             additions: details.stats?.additions || 0,
             deletions: details.stats?.deletions || 0,
@@ -275,6 +318,7 @@ async function fetchTeamData(team: typeof REPOS[0]) {
             message: commit.commit?.message?.split('\n')[0] || '',
             author: commit.commit?.author?.name || 'Unknown',
             authorHandle: commit.author?.login || 'Unknown',
+            avatarUrl,
             date: commit.commit?.author?.date,
             additions: 0,
             deletions: 0,
@@ -282,11 +326,28 @@ async function fetchTeamData(team: typeof REPOS[0]) {
         }
       })
     );
+    const recentCommits = allCommitStats.slice(0, 3);
+
+    // Aggregate contributor stats (additions + deletions) from GitHub's stats API
+    const prepCommitDate = allCommits[prepIndex === -1 ? allCommits.length - 1 : prepIndex]?.commit?.author?.date;
+    const prepTimestamp = prepCommitDate ? Math.floor(new Date(prepCommitDate).getTime() / 1000) : 0;
+    const contributorStats = Array.isArray(rawContributorStats)
+      ? rawContributorStats.map((c: any) => ({
+          login: c.author?.login,
+          additions: (c.weeks || [])
+            .filter((w: any) => w.w >= prepTimestamp)
+            .reduce((sum: number, w: any) => sum + (w.a || 0), 0),
+          deletions: (c.weeks || [])
+            .filter((w: any) => w.w >= prepTimestamp)
+            .reduce((sum: number, w: any) => sum + (w.d || 0), 0),
+        }))
+      : [];
 
     // Minimal commit data for Hall of Fame (all commits)
     const allCommitsMinimal = commits.map((c: any) => ({
       author: c.commit?.author?.name || c.author?.login || 'Unknown',
       authorHandle: c.author?.login || c.commit?.author?.name || 'Unknown',
+      avatarUrl: c.author?.avatar_url || null,
       date: c.commit?.author?.date,
     }));
 
@@ -310,6 +371,7 @@ async function fetchTeamData(team: typeof REPOS[0]) {
       ...team,
       commits: recentCommits,
       allCommits: allCommitsMinimal,
+      allCommitStats,
       openIssues: openIssuesAll.slice(0, 3).map((i: any) => ({ number: i.number, title: i.title, url: i.html_url })),
       openIssuesCount: openIssuesAll.length,
       closedIssuesCount: closedIssuesAll.length,
@@ -329,6 +391,7 @@ async function fetchTeamData(team: typeof REPOS[0]) {
       lastPush,
       buildStatus,
       testResults,
+      contributorStats,
       totalCommits: commits.length,
       totalLinesAdded: recentCommits.reduce((sum, c) => sum + c.additions, 0),
       totalLinesDeleted: recentCommits.reduce((sum, c) => sum + c.deletions, 0),
@@ -349,6 +412,29 @@ const server = Bun.serve({
     const url = new URL(req.url);
 
     console.log(`Request: ${url.pathname}`);
+
+    // Team names mapping endpoints
+    if (url.pathname === "/api/team-mapping" && req.method === "GET") {
+      return new Response(JSON.stringify(teamNamesMapping), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      });
+    }
+
+    if (url.pathname === "/api/team-mapping" && req.method === "POST") {
+      try {
+        const body = await req.json() as Record<string, string>;
+        teamNamesMapping = body;
+        await Bun.write(TEAM_NAMES_FILE, JSON.stringify(teamNamesMapping, null, 2));
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: String(e) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // Metrics history endpoint
     if (url.pathname === "/api/metrics-history") {
