@@ -31,7 +31,7 @@
     <h2>Team Leaderboard</h2>
     <div class="leaderboard-grid" id="leaderboard-grid"></div>
     <div id="tests-chart-container" style="display:none; padding: 1rem 0;">
-      <button onclick="toggleTestsChart()" style="margin-bottom:1rem;font-size:0.85rem;padding:4px 12px;cursor:pointer;background:#1e293b;border:1px solid #475569;color:#e2e8f0;border-radius:4px;">← Back to List</button>
+      <button onclick="toggleMetricsChart(activeChartMetric)" style="margin-bottom:1rem;font-size:0.85rem;padding:4px 12px;cursor:pointer;background:#1e293b;border:1px solid #475569;color:#e2e8f0;border-radius:4px;">← Back to List</button>
       <canvas id="tests-chart" style="max-height: 400px;"></canvas>
     </div>
   </div>
@@ -613,7 +613,8 @@
           </div>
           <div class="team-content">
             <div class="section">
-              <div class="section-title">Recent Commits</div>
+              <div class="section-title">Recent Commits <span class="commit-count">${(team.commits || []).length}</span></div>
+              <div class="section-subtitle">All commits <span class="commit-count">${(team.allCommits || []).length}</span></div>
               <ul class="commit-list">
                 ${(team.commits || []).map(c => `
                   <li class="commit-item">
