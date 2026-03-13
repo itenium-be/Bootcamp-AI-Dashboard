@@ -20,6 +20,72 @@ const CACHE_TTL_MS = 30 * 1000; // 30 seconds
 let cachedData: { teams: any[]; tokenUsage: any[] } | null = null;
 let cacheTimestamp = 0;
 
+// Metrics history storage (10-min snapshots, max 144 = 24h)
+interface MetricsSnapshot {
+  timestamp: number;
+  teams: {
+    name: string;
+    testsPassing: number;
+    totalCommits: number;
+    linesAdded: number;
+    mergedPRs: number;
+  }[];
+}
+
+const METRICS_HISTORY_FILE = import.meta.dir + '/metrics-history.json';
+
+async function loadMetricsHistory(): Promise<MetricsSnapshot[]> {
+  try {
+    const file = Bun.file(METRICS_HISTORY_FILE);
+    if (file.size > 0) {
+      const data = JSON.parse(await file.text());
+      console.log(`Loaded ${data.length} metrics history snapshots from disk`);
+      return data;
+    }
+  } catch {
+    // File doesn't exist yet or is invalid — start fresh
+  }
+  return [];
+}
+
+async function saveMetricsHistory() {
+  try {
+    await Bun.write(METRICS_HISTORY_FILE, JSON.stringify(metricsHistory));
+  } catch (e) {
+    console.error('Failed to save metrics history:', e);
+  }
+}
+
+let metricsHistory: MetricsSnapshot[] = [];
+
+// Load persisted history on startup
+(async () => { metricsHistory = await loadMetricsHistory(); })();
+
+async function recordMetricsHistory() {
+  if (!cachedData || cachedData.teams.length === 0) return;
+  const snapshot: MetricsSnapshot = {
+    timestamp: Date.now(),
+    teams: cachedData.teams
+      .filter((t: any) => !t.error)
+      .map((t: any) => ({
+        name: t.name,
+        testsPassing:
+          (t.testResults?.backend?.passed || 0) +
+          (t.testResults?.frontend?.unit?.passed || 0) +
+          (t.testResults?.frontend?.e2e?.passed || 0),
+        totalCommits: t.totalCommits || 0,
+        linesAdded: t.totalLinesAdded || 0,
+        mergedPRs: t.mergedPRsCount || 0,
+      })),
+  };
+  metricsHistory.push(snapshot);
+  if (metricsHistory.length > 144) metricsHistory = metricsHistory.slice(-144);
+  console.log(`Recorded metrics: ${snapshot.teams.map(t => t.name).join(', ')}`);
+  await saveMetricsHistory();
+}
+
+setInterval(recordMetricsHistory, 10 * 60 * 1000);
+
 async function fetchGitHub(endpoint: string) {
   const headers: Record<string, string> = {
     'Accept': 'application/vnd.github.v3+json',
@@ -36,17 +102,23 @@ async function fetchGitHub(endpoint: string) {
 
 async function fetchAnthropicAdmin(endpoint: string) {
   if (!ANTHROPIC_ADMIN_KEY) return null;
-  const response = await fetch(`https://api.anthropic.com${endpoint}`, {
-    headers: {
-      "x-api-key": ANTHROPIC_ADMIN_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-  });
-  if (!response.ok) {
-    console.error(`Anthropic API error: ${response.status} ${await response.text()}`);
+  try {
+    const response = await fetch(`https://api.anthropic.com${endpoint}`, {
+      headers: {
+        "x-api-key": ANTHROPIC_ADMIN_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      console.error(`Anthropic API error: ${response.status} ${text}`);
+      return null;
+    }
+    return response.json();
+  } catch (error) {
+    console.error(`Anthropic API fetch error:`, error);
     return null;
   }
-  return response.json();
 }
 
 async function fetchTokenUsage() {
@@ -241,6 +313,15 @@ async function fetchTeamData(team: typeof REPOS[0]) {
       openIssues: openIssuesAll.slice(0, 3).map((i: any) => ({ number: i.number, title: i.title, url: i.html_url })),
       openIssuesCount: openIssuesAll.length,
       closedIssuesCount: closedIssuesAll.length,
+      allIssues: issues.filter((i: any) => !i.pull_request).map((i: any) => ({
+        number: i.number,
+        title: i.title,
+        url: i.html_url,
+        state: i.state,
+        labels: (i.labels || []).map((l: any) => ({ name: l.name, color: l.color })),
+        assignee: i.assignee?.login || null,
+        createdAt: i.created_at,
+      })),
       openPRs: openPRsAll.slice(0, 3).map((p: any) => ({ number: p.number, title: p.title, url: p.html_url })),
       openPRsCount: openPRsAll.length,
       mergedPRs: mergedPRsAll.map((p: any) => ({ author: p.user?.login || 'Unknown' })),
@@ -269,6 +350,16 @@ const server = Bun.serve({
 
     console.log(`Request: ${url.pathname}`);
 
+    // Metrics history endpoint
+    if (url.pathname === "/api/metrics-history") {
+      return new Response(JSON.stringify(metricsHistory), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
     // Main API endpoint - returns all data (cached for 30s)
     if (url.pathname === "/api/data") {
       try {
@@ -281,6 +372,7 @@ const server = Bun.serve({
           ]);
           cachedData = { teams: teamsData, tokenUsage };
           cacheTimestamp = now;
+          recordMetricsHistory();
         } else {
           console.log(`Cache hit - ${Math.round((CACHE_TTL_MS - (now - cacheTimestamp)) / 1000)}s remaining`);
         }

@@ -6,6 +6,7 @@
   <title>SkillForge AI Bootcamp Dashboard</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <header>
@@ -29,10 +30,26 @@
   <div class="leaderboard" id="leaderboard">
     <h2>Team Leaderboard</h2>
     <div class="leaderboard-grid" id="leaderboard-grid"></div>
+    <div id="tests-chart-container" style="display:none; padding: 1rem 0;">
+      <button onclick="toggleTestsChart()" style="margin-bottom:1rem;font-size:0.85rem;padding:4px 12px;cursor:pointer;background:#1e293b;border:1px solid #475569;color:#e2e8f0;border-radius:4px;">← Back to List</button>
+      <canvas id="tests-chart" style="max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+  <div class="view-switcher">
+    <button id="view-btn-cards" class="view-btn active" onclick="showView('cards')">🗂️ Cards</button>
+    <button id="view-btn-board" class="view-btn" onclick="showView('board')">📋 Board</button>
   </div>
 
   <div class="teams-grid" id="teams-grid">
     <div class="loading">Loading...</div>
+  </div>
+
+  <div id="board-section" style="display:none;">
+    <div class="board-nav">
+      <div class="board-team-tabs" id="board-team-tabs"></div>
+    </div>
+    <div class="board-columns" id="board-columns"></div>
   </div>
 
   <div class="token-modal hidden" id="team-modal">
@@ -182,6 +199,107 @@
     const REFRESH_INTERVAL = 120000; // 2 minutes
     let countdownInterval;
     let nextRefresh;
+    let activeChartMetric = null;
+    let metricsChartInstance = null;
+    let currentView = 'cards';
+    let currentBoardTeam = null;
+    let latestTeamsData = null;
+
+    const CHART_METRIC_LABELS = {
+      testsPassing: 'Tests Passing',
+      totalCommits: 'Total Commits',
+      linesAdded: 'Lines Added',
+      mergedPRs: 'PRs Merged',
+    };
+
+    async function toggleMetricsChart(key) {
+      const grid = document.getElementById('leaderboard-grid');
+      const chartContainer = document.getElementById('tests-chart-container');
+
+      if (activeChartMetric === key) {
+        // Same button clicked — close chart
+        activeChartMetric = null;
+        grid.style.display = '';
+        chartContainer.style.display = 'none';
+        if (metricsChartInstance) { metricsChartInstance.destroy(); metricsChartInstance = null; }
+      } else {
+        // Open (or switch) chart
+        activeChartMetric = key;
+        grid.style.display = 'none';
+        chartContainer.style.display = 'block';
+        await renderMetricsChart();
+      }
+      // Refresh button labels
+      document.querySelectorAll('[data-chart-key]').forEach(btn => {
+        btn.textContent = btn.dataset.chartKey === activeChartMetric ? '📋 List' : '📈 Chart';
+      });
+    }
+
+    async function renderMetricsChart() {
+      if (metricsChartInstance) { metricsChartInstance.destroy(); metricsChartInstance = null; }
+      const canvas = document.getElementById('tests-chart');
+      const ctx = canvas.getContext('2d');
+
+      let history = [];
+      try {
+        const res = await fetch('/api/metrics-history');
+        history = await res.json();
+      } catch (e) {
+        console.error('Failed to fetch metrics history:', e);
+      }
+
+      if (!history || history.length === 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        canvas.height = 80;
+        ctx.fillText('No history yet — data is recorded every 10 minutes.', canvas.width / 2, 40);
+        return;
+      }
+
+      const key = activeChartMetric;
+      const label = CHART_METRIC_LABELS[key] || key;
+
+      const labels = history.map(s => {
+        const d = new Date(s.timestamp);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      });
+
+      const datasets = REPOS.map(repo => ({
+        label: repo.name,
+        data: history.map(s => {
+          const t = s.teams.find(t => t.name === repo.name);
+          return t !== undefined ? (t[key] ?? null) : null;
+        }),
+        borderColor: repo.color,
+        backgroundColor: repo.color + '33',
+        tension: 0.3,
+        pointRadius: 4,
+        spanGaps: true,
+      }));
+
+      metricsChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top', labels: { color: '#e2e8f0' } },
+            title: { display: true, text: `${label} Over Time`, color: '#e2e8f0', font: { size: 16 } },
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+            y: {
+              ticks: { color: '#94a3b8' },
+              grid: { color: '#334155' },
+              beginAtZero: true,
+              title: { display: true, text: label, color: '#94a3b8' },
+            },
+          },
+        },
+      });
+    }
 
     function showTeamModal() {
       const container = document.getElementById('team-selectors');
@@ -331,6 +449,8 @@
       const mostCommits = contributors.sort((a, b) => b.commits - a.commits)[0];
       const mostPRs = contributors.sort((a, b) => b.prs - a.prs)[0];
       const mostChurn = contributors.sort((a, b) => b.linesChanged - a.linesChanged)[0];
+      const activeContributors = contributors.filter(c => c.commits > 0);
+      const leastChurn = activeContributors.sort((a, b) => a.linesChanged - b.linesChanged)[0];
 
       // Find top token burner
       let topTokenBurner = null;
@@ -357,7 +477,8 @@
         { title: 'Most PRs', icon: '🔀', winner: mostPRs?.prs > 0 ? { name: mostPRs.name, handle: mostPRs.handle, team: mostPRs.team, teamColor: mostPRs.teamColor, teamLogo: mostPRs.teamLogo, value: mostPRs.prs } : null },
         { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.name, handle: largestCommit.handle, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines} lines` } : null },
         { title: 'Most Churn', icon: '🌀', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, handle: mostChurn.handle, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged} lines` } : null },
-        { title: 'Token Burner', icon: '🔥', winner: topTokenBurner },
+        { title: 'Slacker', icon: '🛋️', winner: leastChurn ? { name: leastChurn.name, handle: leastChurn.handle, team: leastChurn.team, teamColor: leastChurn.teamColor, teamLogo: leastChurn.teamLogo, value: `${leastChurn.linesChanged} lines` } : null },
+        ...(topTokenBurner ? [{ title: 'Token Burner', icon: '🔥', winner: topTokenBurner }] : []),
       ];
 
       const grid = document.getElementById('topboard-grid');
@@ -387,6 +508,7 @@
         {
           title: 'Tests Passing',
           icon: '✅',
+          chartKey: 'testsPassing',
           getData: (t) => {
             const be = t.testResults?.backend?.passed || 0;
             const feUnit = t.testResults?.frontend?.unit?.passed || 0;
@@ -397,36 +519,42 @@
         {
           title: 'Total Commits',
           icon: '⚡',
+          chartKey: 'totalCommits',
           getData: (t) => t.totalCommits || 0,
         },
         {
           title: 'Lines Added',
           icon: '📈',
+          chartKey: 'linesAdded',
           getData: (t) => t.totalLinesAdded || 0,
         },
         {
           title: 'PRs Merged',
           icon: '🔀',
+          chartKey: 'mergedPRs',
           getData: (t) => t.mergedPRsCount || 0,
         },
-        {
+        ...(Object.values(teamUsage || {}).some(u => u.total > 0) ? [{
           title: 'Tokens Burned',
           icon: '🔥',
           getData: (t) => teamUsage?.[t.name]?.total || 0,
           format: formatTokens,
-        },
+        }] : []),
       ];
 
       const grid = document.getElementById('leaderboard-grid');
-      grid.innerHTML = categories.map(cat => {
+      grid.innerHTML = categories.map((cat) => {
         const sorted = [...validTeams].sort((a, b) => cat.getData(b) - cat.getData(a));
         const winner = sorted[0];
         const winnerScore = cat.getData(winner);
         const bgStyle = winnerScore > 0 ? `style="background-image: url('${winner.logo}')"` : '';
         const formatFn = cat.format || (v => v);
+        const chartBtn = cat.chartKey
+          ? `<button data-chart-key="${cat.chartKey}" onclick="toggleMetricsChart('${cat.chartKey}')" style="margin-left:auto;font-size:0.7rem;padding:2px 8px;cursor:pointer;background:#1e293b;border:1px solid #475569;color:#e2e8f0;border-radius:4px;">${activeChartMetric === cat.chartKey ? '📋 List' : '📈 Chart'}</button>`
+          : '';
         return `
           <div class="leaderboard-category" ${bgStyle}>
-            <h3>${cat.icon || ''} ${cat.title}</h3>
+            <h3 style="display:flex;align-items:center;gap:0.5rem;">${cat.icon || ''} ${cat.title}${chartBtn}</h3>
             ${sorted.map((t, idx) => {
               const actualTeam = getActualTeam(t.name);
               const score = cat.getData(t);
@@ -571,6 +699,85 @@
       return div.innerHTML;
     }
 
+    const IN_PROGRESS_LABELS = ['in progress', 'in-progress', 'in_progress', 'wip', 'doing', 'started'];
+
+    function showView(view) {
+      currentView = view;
+      document.getElementById('teams-grid').style.display = view === 'cards' ? '' : 'none';
+      document.getElementById('board-section').style.display = view === 'board' ? '' : 'none';
+      document.getElementById('view-btn-cards').classList.toggle('active', view === 'cards');
+      document.getElementById('view-btn-board').classList.toggle('active', view === 'board');
+      if (view === 'board' && latestTeamsData) renderBoard(latestTeamsData);
+    }
+
+    function selectBoardTeam(name) {
+      currentBoardTeam = name;
+      if (latestTeamsData) renderBoard(latestTeamsData);
+    }
+
+    function renderBoard(teamsData) {
+      const validTeams = teamsData.filter(t => !t.error && t.allIssues);
+      if (!validTeams.length) {
+        document.getElementById('board-columns').innerHTML = '<div class="loading">No issue data available.</div>';
+        return;
+      }
+
+      if (!currentBoardTeam || !validTeams.find(t => t.name === currentBoardTeam)) {
+        currentBoardTeam = validTeams[0].name;
+      }
+
+      // Render team tabs
+      document.getElementById('board-team-tabs').innerHTML = validTeams.map(t => {
+        const active = t.name === currentBoardTeam;
+        const actualTeam = getActualTeam(t.name);
+        return `<button class="board-team-tab ${active ? 'active' : ''}"
+          style="border-color:${t.color};${active ? `background:${t.color}22;color:${t.color}` : ''}"
+          onclick="selectBoardTeam('${t.name}')">
+          ${actualTeam ? actualTeam.name : t.name}
+        </button>`;
+      }).join('');
+
+      // Render columns for selected team
+      const team = validTeams.find(t => t.name === currentBoardTeam);
+      const issues = team.allIssues || [];
+
+      const backlog = issues.filter(i => i.state === 'open' && !i.labels.some(l => IN_PROGRESS_LABELS.includes(l.name.toLowerCase())));
+      const inProgress = issues.filter(i => i.state === 'open' && i.labels.some(l => IN_PROGRESS_LABELS.includes(l.name.toLowerCase())));
+      const done = issues.filter(i => i.state === 'closed');
+
+      const columns = [
+        { title: 'Backlog', icon: '📋', issues: backlog, accent: '#58a6ff' },
+        { title: 'In Progress', icon: '⚡', issues: inProgress, accent: '#d29922' },
+        { title: 'Done', icon: '✅', issues: done.slice(0, 30), accent: '#3fb950' },
+      ];
+
+      document.getElementById('board-columns').innerHTML = columns.map(col => `
+        <div class="board-column">
+          <div class="board-column-header" style="border-bottom-color:${col.accent}">
+            <span>${col.icon} ${col.title}</span>
+            <span class="board-column-count" style="background:${col.accent}22;color:${col.accent}">${col.issues.length}</span>
+          </div>
+          <div class="board-cards">
+            ${col.issues.length === 0
+              ? '<div class="board-empty">No issues</div>'
+              : col.issues.map(issue => `
+                <a href="${issue.url}" target="_blank" class="board-card">
+                  <div class="board-card-meta">
+                    <span class="board-card-number">#${issue.number}</span>
+                    ${issue.assignee ? `<span class="board-assignee">@${resolveName(issue.assignee)}</span>` : ''}
+                  </div>
+                  <div class="board-card-title">${escapeHtml(issue.title)}</div>
+                  ${issue.labels.length > 0 ? `
+                    <div class="board-labels">
+                      ${issue.labels.map(l => `<span class="board-label" style="background:#${l.color}22;border-color:#${l.color};color:#${l.color}">${escapeHtml(l.name)}</span>`).join('')}
+                    </div>` : ''}
+                </a>
+              `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
     function startCountdown() {
       if (countdownInterval) clearInterval(countdownInterval);
       nextRefresh = Date.now() + REFRESH_INTERVAL;
@@ -594,10 +801,21 @@
         const teamsData = data.teams || [];
         const tokenUsage = data.tokenUsage || [];
         const teamUsage = aggregateUsageByTeam(tokenUsage);
+        latestTeamsData = teamsData;
 
         renderTopboard(teamsData, tokenUsage);
         renderLeaderboard(teamsData, teamUsage);
+
+        // Restore chart state after re-render
+        if (activeChartMetric) {
+          document.getElementById('leaderboard-grid').style.display = 'none';
+          document.getElementById('tests-chart-container').style.display = 'block';
+          await renderMetricsChart();
+        }
+
         grid.innerHTML = teamsData.map(renderTeamCard).join('');
+
+        if (currentView === 'board') renderBoard(teamsData);
       } catch (error) {
         console.error('Failed to fetch data:', error);
         grid.innerHTML = '<div class="error">Failed to load data. Check server logs.</div>';
