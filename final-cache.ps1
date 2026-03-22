@@ -4,6 +4,12 @@ $TEAMS = @("Obsidian", "RoyalPurple", "Teal", "Emerald", "Crimson", "MidnightBlu
 $REPOS_PATH = "$PSScriptRoot\runner\repos"
 $PREP_COMMIT_COUNT = 118  # Prep commits to skip (119 in main repo, but team repos are 1 behind)
 $EXCLUDED_AUTHORS = @("Wouter Van Schandevijl", "Laoujin", "Bert Vermorgen", "BertVermorgen", "Olivier Van de Perre")
+
+# Map alternate names to canonical names
+$NAME_ALIASES = @{
+    "Mike D" = "Mikedonna"
+    "mikedonna" = "Mikedonna"
+}
 $GITHUB_REPOS = @{
     "Obsidian" = "itenium-be/Bootcamp-AI-Obsidian"
     "RoyalPurple" = "itenium-be/Bootcamp-AI-RoyalPurple"
@@ -87,6 +93,9 @@ function Get-TeamData($teamName) {
                 continue
             }
 
+            # Normalize author name using aliases
+            $authorName = if ($NAME_ALIASES.ContainsKey($authorLine)) { $NAME_ALIASES[$authorLine] } else { $authorLine }
+
             $messageLine = git log -1 --format="%s" $sha
             $statsLine = git show --stat --format="" $sha | Select-Object -Last 1
 
@@ -104,17 +113,17 @@ function Get-TeamData($teamName) {
             $actualCommitCount++
 
             # Track per person
-            if (-not $people.ContainsKey($authorLine)) {
-                $people[$authorLine] = @{
+            if (-not $people.ContainsKey($authorName)) {
+                $people[$authorName] = @{
                     commits = 0
                     linesAdded = 0
                     linesRemoved = 0
                     prs = 0
                 }
             }
-            $people[$authorLine].commits++
-            $people[$authorLine].linesAdded += $added
-            $people[$authorLine].linesRemoved += $removed
+            $people[$authorName].commits++
+            $people[$authorName].linesAdded += $added
+            $people[$authorName].linesRemoved += $removed
 
             # Track biggest commit
             $churn = $added + $removed
@@ -122,7 +131,7 @@ function Get-TeamData($teamName) {
                 $biggestChurn = $churn
                 $biggestCommit = @{
                     sha = $sha.Substring(0, 7)
-                    author = $authorLine
+                    author = $authorName
                     message = $messageLine
                     linesAdded = $added
                     linesRemoved = $removed
@@ -135,7 +144,7 @@ function Get-TeamData($teamName) {
                 $firstCommitDate = $commitDate
                 $firstCommit = @{
                     sha = $sha.Substring(0, 7)
-                    author = $authorLine
+                    author = $authorName
                     message = $messageLine
                     date = $commitDate
                 }

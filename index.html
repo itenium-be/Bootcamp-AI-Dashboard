@@ -533,12 +533,12 @@
         { title: 'Most PRs', icon: '🔀', winner: mostPRs?.prs > 0 ? { name: mostPRs.name, handle: mostPRs.handle, team: mostPRs.team, teamColor: mostPRs.teamColor, teamLogo: mostPRs.teamLogo, value: mostPRs.prs } : null },
         { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.name, handle: largestCommit.handle, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines.toLocaleString()} lines` } : null },
         { title: 'Most Churn', icon: '🌀', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, handle: mostChurn.handle, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged.toLocaleString()} lines` } : null },
-        { title: 'Slacker', icon: '🛋️', winner: leastChurn ? { name: leastChurn.name, handle: leastChurn.handle, team: leastChurn.team, teamColor: leastChurn.teamColor, teamLogo: leastChurn.teamLogo, value: `${leastChurn.linesChanged} lines` } : null },
+        { title: 'Slacker', icon: '🛋️', hidden: true, winner: leastChurn ? { name: leastChurn.name, handle: leastChurn.handle, team: leastChurn.team, teamColor: leastChurn.teamColor, teamLogo: leastChurn.teamLogo, value: `${leastChurn.linesChanged} lines` } : null },
         ...(topTokenBurner ? [{ title: 'Token Burner', icon: '🔥', winner: topTokenBurner }] : []),
       ];
 
       const grid = document.getElementById('topboard-grid');
-      grid.innerHTML = awards.map(award => {
+      grid.innerHTML = awards.filter(a => !a.hidden).map(award => {
         const actualTeam = award.winner ? getActualTeam(award.winner.team) : null;
         return `
           <div class="topboard-item" ${award.winner?.teamLogo ? `style="background-image: url('${award.winner.teamLogo}')"` : ''}>

@@ -279,10 +279,10 @@
                                       "totalLinesRemoved":  1969,
                                       "people":  {
                                                      "Mikedonna":  {
-                                                                       "commits":  2,
-                                                                       "linesAdded":  1392,
+                                                                       "commits":  4,
+                                                                       "linesAdded":  1472,
                                                                        "prs":  1,
-                                                                       "linesRemoved":  10
+                                                                       "linesRemoved":  13
                                                                    },
                                                      "borosseel":  {
                                                                        "commits":  2,
@@ -302,12 +302,6 @@
                                                                         "prs":  0,
                                                                         "linesRemoved":  780
                                                                     },
-                                                     "Mike D":  {
-                                                                    "commits":  2,
-                                                                    "linesAdded":  80,
-                                                                    "prs":  0,
-                                                                    "linesRemoved":  3
-                                                                },
                                                      "Joris Wijnant":  {
                                                                            "commits":  15,
                                                                            "linesAdded":  23704,
@@ -385,5 +379,5 @@
                                    "totalLinesAdded":  18522
                                }
               },
-    "generatedAt":  "2026-03-22T15:25:12.1360392+01:00"
+    "generatedAt":  "2026-03-22T15:33:18.2815248+01:00"
 }
