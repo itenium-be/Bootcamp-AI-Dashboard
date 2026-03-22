@@ -564,28 +564,63 @@ const server = Bun.serve({
             const teamData = finalCache.teams?.[repoInfo.name] || {};
             const tests = teamData.tests || {};
             const people = teamData.people || {};
+            const biggestCommit = teamData.biggestCommit;
+            const firstCommit = teamData.firstCommit;
 
-            // Sum PRs from all people
-            const mergedPRsCount = Object.values(people).reduce((sum: number, p: any) => sum + (p.prs || 0), 0);
-
-            // Generate allCommits from people for Hall of Fame
-            const allCommits = Object.entries(people).flatMap(([author, stats]: [string, any]) =>
+            // Generate allCommits for commit counts + first commit date
+            const allCommits: any[] = Object.entries(people).flatMap(([author, stats]: [string, any]) =>
               Array(stats.commits || 0).fill({ author, authorHandle: author, avatarUrl: null, date: null })
+            );
+            // Add first commit with actual date
+            if (firstCommit?.date) {
+              allCommits.push({
+                author: firstCommit.author,
+                authorHandle: firstCommit.author,
+                avatarUrl: null,
+                date: firstCommit.date,
+              });
+            }
+
+            // Generate allCommitStats for churn per person + biggest commit
+            const allCommitStats: any[] = Object.entries(people).map(([author, stats]: [string, any]) => ({
+              author,
+              authorHandle: author,
+              avatarUrl: null,
+              date: null,
+              message: '',
+              additions: stats.linesAdded || 0,
+              deletions: stats.linesRemoved || 0,
+            }));
+            if (biggestCommit) {
+              allCommitStats.push({
+                author: biggestCommit.author,
+                authorHandle: biggestCommit.author,
+                avatarUrl: null,
+                date: null,
+                message: biggestCommit.message,
+                additions: biggestCommit.linesAdded || 0,
+                deletions: biggestCommit.linesRemoved || 0,
+              });
+            }
+
+            // Generate mergedPRs array for Most PRs
+            const mergedPRs = Object.entries(people).flatMap(([author, stats]: [string, any]) =>
+              Array(stats.prs || 0).fill({ author })
             );
 
             return {
               ...repoInfo,
               commits: [],
               allCommits,
-              allCommitStats: [],
+              allCommitStats,
               openIssues: [],
               openIssuesCount: 0,
               closedIssuesCount: 0,
               allIssues: [],
               openPRs: [],
               openPRsCount: 0,
-              mergedPRs: [],
-              mergedPRsCount,
+              mergedPRs,
+              mergedPRsCount: mergedPRs.length,
               lastPush: null,
               buildStatus: 'success',
               testResults: {

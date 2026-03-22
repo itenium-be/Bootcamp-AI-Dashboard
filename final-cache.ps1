@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $TEAMS = @("Obsidian", "RoyalPurple", "Teal", "Emerald", "Crimson", "MidnightBlue")
 $REPOS_PATH = "$PSScriptRoot\runner\repos"
+$PREP_COMMIT_COUNT = 118  # Prep commits to skip (119 in main repo, but team repos are 1 behind)
 $EXCLUDED_AUTHORS = @("Wouter Van Schandevijl", "Laoujin", "Bert Vermorgen", "BertVermorgen", "Olivier Van de Perre")
 $GITHUB_REPOS = @{
     "Obsidian" = "itenium-be/Bootcamp-AI-Obsidian"
@@ -58,19 +59,14 @@ function Get-TeamData($teamName) {
 
     Push-Location $repoPath
     try {
-        # Get all commits, then filter out excluded authors
-        $allCommitShas = git rev-list HEAD 2>$null
-        if (-not $allCommitShas) {
-            $allCommitShas = @()
-        }
+        # Get bootcamp commits only (skip prep commits)
+        $totalCommits = [int](git rev-list --count HEAD 2>$null)
+        $bootcampCount = $totalCommits - $PREP_COMMIT_COUNT
 
-        # Filter out commits by excluded authors
-        $commitShas = @()
-        foreach ($sha in $allCommitShas) {
-            $authorLine = git log -1 --format="%an" $sha
-            if ($authorLine -notin $EXCLUDED_AUTHORS) {
-                $commitShas += $sha
-            }
+        if ($bootcampCount -le 0) {
+            $commitShas = @()
+        } else {
+            $commitShas = @(git rev-list HEAD -n $bootcampCount 2>$null)
         }
 
         $people = @{}
@@ -80,10 +76,17 @@ function Get-TeamData($teamName) {
         $totalLinesRemoved = 0
         $firstCommit = $null
         $firstCommitDate = $null
+        $actualCommitCount = 0
 
         foreach ($sha in $commitShas) {
             # Get commit details
             $authorLine = git log -1 --format="%an" $sha
+
+            # Skip excluded authors
+            if ($authorLine -in $EXCLUDED_AUTHORS) {
+                continue
+            }
+
             $messageLine = git log -1 --format="%s" $sha
             $statsLine = git show --stat --format="" $sha | Select-Object -Last 1
 
@@ -98,6 +101,7 @@ function Get-TeamData($teamName) {
 
             $totalLinesAdded += $added
             $totalLinesRemoved += $removed
+            $actualCommitCount++
 
             # Track per person
             if (-not $people.ContainsKey($authorLine)) {
@@ -171,7 +175,7 @@ function Get-TeamData($teamName) {
             totalLinesRemoved = $totalLinesRemoved
             biggestCommit = $biggestCommit
             firstCommit = $firstCommit
-            totalCommits = $commitShas.Count
+            totalCommits = $actualCommitCount
             people = $people
         }
     }
