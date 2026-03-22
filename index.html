@@ -195,7 +195,7 @@
     function aggregateUsageByTeam(usage) {
       const teamUsage = {};
       for (const repo of REPOS) {
-        teamUsage[repo.name] = { input: 0, output: 0, total: 0, color: repo.color, logo: repo.logo };
+        teamUsage[repo.name] = { input: 0, output: 0, total: 0, cost: 0, color: repo.color, logo: repo.logo };
       }
 
       for (const entry of usage || []) {
@@ -204,6 +204,7 @@
           teamUsage[team].input += entry.input || 0;
           teamUsage[team].output += entry.output || 0;
           teamUsage[team].total += (entry.input || 0) + (entry.output || 0);
+          teamUsage[team].cost += entry.cost || 0;
         }
       }
 
@@ -591,12 +592,12 @@
           chartKey: 'mergedPRs',
           getData: (t) => t.mergedPRsCount || 0,
         },
-        ...(Object.values(teamUsage || {}).some(u => u.total > 0) ? [{
-          title: 'Tokens Burned',
-          icon: '🔥',
+        ...(Object.values(teamUsage || {}).some(u => u.cost > 0) ? [{
+          title: 'AI Cost',
+          icon: '💸',
           chartKey: 'tokensBurned',
-          getData: (t) => teamUsage?.[t.name]?.total || 0,
-          format: formatTokens,
+          getData: (t) => teamUsage?.[t.name]?.cost || 0,
+          format: v => `$${v.toFixed(2)}`,
         }] : []),
       ];
 
