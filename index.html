@@ -522,7 +522,7 @@
             team: team || 'Unknown',
             teamColor: teamRepo?.color || '#888',
             teamLogo: teamRepo?.logo || '',
-            value: formatTokens((top.input || 0) + (top.output || 0)),
+            value: top.cost ? `$${top.cost.toFixed(2)}` : formatTokens((top.input || 0) + (top.output || 0)),
           };
         }
       }
@@ -534,7 +534,7 @@
         { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.name, handle: largestCommit.handle, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines.toLocaleString()} lines` } : null },
         { title: 'Most Churn', icon: '🌀', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, handle: mostChurn.handle, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged.toLocaleString()} lines` } : null },
         { title: 'Slacker', icon: '🛋️', hidden: true, winner: leastChurn ? { name: leastChurn.name, handle: leastChurn.handle, team: leastChurn.team, teamColor: leastChurn.teamColor, teamLogo: leastChurn.teamLogo, value: `${leastChurn.linesChanged} lines` } : null },
-        ...(topTokenBurner ? [{ title: 'Token Burner', icon: '🔥', winner: topTokenBurner }] : []),
+        ...(topTokenBurner ? [{ title: 'AI Spender', icon: '💸', winner: topTokenBurner }] : []),
       ];
 
       const grid = document.getElementById('topboard-grid');
