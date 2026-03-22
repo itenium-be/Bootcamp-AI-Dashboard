@@ -528,11 +528,11 @@
       }
 
       const awards = [
-        { title: 'First Commit', icon: '🚀', winner: firstCommit ? { name: firstCommit.name, handle: firstCommit.handle, team: firstCommit.team, teamColor: firstCommit.teamColor, teamLogo: firstCommit.teamLogo, value: getTimeAgo(firstCommit.date) } : null },
+        { title: 'First Commit', icon: '🚀', winner: firstCommit ? { name: firstCommit.name, handle: firstCommit.handle, team: firstCommit.team, teamColor: firstCommit.teamColor, teamLogo: firstCommit.teamLogo, value: new Date(firstCommit.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) } : null },
         { title: 'Most Commits', icon: '⚡', winner: mostCommits ? { name: mostCommits.name, handle: mostCommits.handle, team: mostCommits.team, teamColor: mostCommits.teamColor, teamLogo: mostCommits.teamLogo, value: mostCommits.commits } : null },
         { title: 'Most PRs', icon: '🔀', winner: mostPRs?.prs > 0 ? { name: mostPRs.name, handle: mostPRs.handle, team: mostPRs.team, teamColor: mostPRs.teamColor, teamLogo: mostPRs.teamLogo, value: mostPRs.prs } : null },
-        { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.name, handle: largestCommit.handle, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines} lines` } : null },
-        { title: 'Most Churn', icon: '🌀', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, handle: mostChurn.handle, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged} lines` } : null },
+        { title: 'Largest Commit', icon: '💪', winner: largestCommit?.lines > 0 ? { name: largestCommit.name, handle: largestCommit.handle, team: largestCommit.team, teamColor: largestCommit.teamColor, teamLogo: largestCommit.teamLogo, value: `${largestCommit.lines.toLocaleString()} lines` } : null },
+        { title: 'Most Churn', icon: '🌀', winner: mostChurn?.linesChanged > 0 ? { name: mostChurn.name, handle: mostChurn.handle, team: mostChurn.team, teamColor: mostChurn.teamColor, teamLogo: mostChurn.teamLogo, value: `${mostChurn.linesChanged.toLocaleString()} lines` } : null },
         { title: 'Slacker', icon: '🛋️', winner: leastChurn ? { name: leastChurn.name, handle: leastChurn.handle, team: leastChurn.team, teamColor: leastChurn.teamColor, teamLogo: leastChurn.teamLogo, value: `${leastChurn.linesChanged} lines` } : null },
         ...(topTokenBurner ? [{ title: 'Token Burner', icon: '🔥', winner: topTokenBurner }] : []),
       ];
@@ -583,6 +583,7 @@
           icon: '📈',
           chartKey: 'linesAdded',
           getData: (t) => t.totalLinesAdded || 0,
+          format: v => v.toLocaleString(),
         },
         {
           title: 'PRs Merged',
