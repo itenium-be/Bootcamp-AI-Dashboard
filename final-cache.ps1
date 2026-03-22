@@ -1,8 +1,16 @@
 $ErrorActionPreference = "Stop"
 
-$PREP_COMMIT_SHA = "731e4ad50e34e6587258a6a67ceeb895e10b5366"
 $TEAMS = @("Obsidian", "RoyalPurple", "Teal", "Emerald", "Crimson", "MidnightBlue")
 $REPOS_PATH = "$PSScriptRoot\runner\repos"
+$EXCLUDED_AUTHORS = @("Wouter Van Schandevijl", "Laoujin", "Bert Vermorgen", "BertVermorgen", "Olivier Van de Perre")
+$GITHUB_REPOS = @{
+    "Obsidian" = "itenium-be/Bootcamp-AI-Obsidian"
+    "RoyalPurple" = "itenium-be/Bootcamp-AI-RoyalPurple"
+    "Teal" = "itenium-be/Bootcamp-AI-Teal"
+    "Emerald" = "itenium-be/Bootcamp-AI-Emerald"
+    "Crimson" = "itenium-be/Bootcamp-AI-Crimson"
+    "MidnightBlue" = "itenium-be/Bootcamp-AI-MidnightBlue"
+}
 
 function Count-BackendTests($repoPath) {
     $testFiles = Get-ChildItem -Path "$repoPath\backend" -Filter "*Tests.cs" -Recurse -ErrorAction SilentlyContinue
@@ -50,10 +58,19 @@ function Get-TeamData($teamName) {
 
     Push-Location $repoPath
     try {
-        # Get all commits after PREP_COMMIT_SHA
-        $commitShas = git rev-list "$PREP_COMMIT_SHA..HEAD" 2>$null
-        if (-not $commitShas) {
-            $commitShas = @()
+        # Get all commits, then filter out excluded authors
+        $allCommitShas = git rev-list HEAD 2>$null
+        if (-not $allCommitShas) {
+            $allCommitShas = @()
+        }
+
+        # Filter out commits by excluded authors
+        $commitShas = @()
+        foreach ($sha in $allCommitShas) {
+            $authorLine = git log -1 --format="%an" $sha
+            if ($authorLine -notin $EXCLUDED_AUTHORS) {
+                $commitShas += $sha
+            }
         }
 
         $people = @{}
@@ -61,6 +78,8 @@ function Get-TeamData($teamName) {
         $biggestChurn = 0
         $totalLinesAdded = 0
         $totalLinesRemoved = 0
+        $firstCommit = $null
+        $firstCommitDate = $null
 
         foreach ($sha in $commitShas) {
             # Get commit details
@@ -105,17 +124,37 @@ function Get-TeamData($teamName) {
                     linesRemoved = $removed
                 }
             }
+
+            # Track first commit (earliest date)
+            $commitDate = git log -1 --format="%aI" $sha
+            if ($commitDate -and (-not $firstCommitDate -or $commitDate -lt $firstCommitDate)) {
+                $firstCommitDate = $commitDate
+                $firstCommit = @{
+                    sha = $sha.Substring(0, 7)
+                    author = $authorLine
+                    message = $messageLine
+                    date = $commitDate
+                }
+            }
         }
 
-        # Count PRs per person (merged PRs from git log)
-        # Look for "Merge pull request" commits
-        foreach ($sha in $commitShas) {
-            $messageLine = git log -1 --format="%s" $sha
-            $authorLine = git log -1 --format="%an" $sha
-            if ($messageLine -match "^Merge pull request") {
-                if ($people.ContainsKey($authorLine)) {
-                    $people[$authorLine].prs++
+        # Count PRs per person using gh CLI
+        $ghRepo = $GITHUB_REPOS[$teamName]
+        if ($ghRepo) {
+            try {
+                $prs = gh pr list --repo $ghRepo --state merged --limit 500 --json author 2>$null | ConvertFrom-Json
+                foreach ($pr in $prs) {
+                    $prAuthor = $pr.author.login
+                    # Match PR author to people (check if any person key contains the author or vice versa)
+                    foreach ($personName in $people.Keys) {
+                        if ($personName -like "*$prAuthor*" -or $prAuthor -like "*$personName*") {
+                            $people[$personName].prs++
+                            break
+                        }
+                    }
                 }
+            } catch {
+                Write-Warning "Failed to fetch PRs for $teamName"
             }
         }
 
@@ -131,6 +170,7 @@ function Get-TeamData($teamName) {
             totalLinesAdded = $totalLinesAdded
             totalLinesRemoved = $totalLinesRemoved
             biggestCommit = $biggestCommit
+            firstCommit = $firstCommit
             totalCommits = $commitShas.Count
             people = $people
         }
