@@ -1,0 +1,383 @@
+﻿{
+  "teams": {
+    "Crimson": {
+      "people": {
+        "Bert Vermorgen": {
+          "commits": 2,
+          "linesAdded": 2,
+          "prs": 0,
+          "linesRemoved": 12
+        },
+        "Olivier Van de Perre": {
+          "commits": 2,
+          "linesAdded": 3032,
+          "prs": 0,
+          "linesRemoved": 25
+        },
+        "David Sverdlov": {
+          "commits": 53,
+          "linesAdded": 22895,
+          "prs": 5,
+          "linesRemoved": 231
+        },
+        "Bram De Plekker": {
+          "commits": 15,
+          "linesAdded": 33856,
+          "prs": 0,
+          "linesRemoved": 218
+        },
+        "Jelle Maes": {
+          "commits": 24,
+          "linesAdded": 32588,
+          "prs": 0,
+          "linesRemoved": 572
+        },
+        "Plekker": {
+          "commits": 6,
+          "linesAdded": 10194,
+          "prs": 5,
+          "linesRemoved": 60
+        },
+        "jonathanrasquin": {
+          "commits": 24,
+          "linesAdded": 33646,
+          "prs": 3,
+          "linesRemoved": 375
+        },
+        "Laoujin": {
+          "commits": 28,
+          "linesAdded": 730,
+          "prs": 0,
+          "linesRemoved": 548
+        },
+        "heleendemeue": {
+          "commits": 1,
+          "linesAdded": 770,
+          "prs": 1,
+          "linesRemoved": 41
+        },
+        "BertVermorgen": {
+          "commits": 3,
+          "linesAdded": 322,
+          "prs": 0,
+          "linesRemoved": 9
+        },
+        "Heleen De Meue": {
+          "commits": 20,
+          "linesAdded": 18766,
+          "prs": 0,
+          "linesRemoved": 222
+        },
+        "Wouter Van Schandevijl": {
+          "commits": 78,
+          "linesAdded": 20379,
+          "prs": 3,
+          "linesRemoved": 18816
+        }
+      },
+      "biggestCommit": {
+        "linesAdded": 12837,
+        "message": "feat(STORY-14): add learning content blocks to lessons",
+        "linesRemoved": 33,
+        "author": "Jelle Maes",
+        "sha": "8204b2a"
+      },
+      "totalCommits": 256,
+      "tests": {
+        "backend": 283,
+        "frontend": 92,
+        "e2e": 5
+      },
+      "totalLinesRemoved": 21129,
+      "totalLinesAdded": 177180
+    },
+    "Teal": {
+      "people": {
+        "Steven Robijns": {
+          "commits": 4,
+          "linesAdded": 5562,
+          "prs": 0,
+          "linesRemoved": 21
+        },
+        "Nina Van Hoof": {
+          "commits": 9,
+          "linesAdded": 5355,
+          "prs": 0,
+          "linesRemoved": 21
+        },
+        "Pierre Bosse": {
+          "commits": 3,
+          "linesAdded": 1589,
+          "prs": 0,
+          "linesRemoved": 47
+        },
+        "Bert": {
+          "commits": 1,
+          "linesAdded": 326,
+          "prs": 0,
+          "linesRemoved": 0
+        }
+      },
+      "biggestCommit": {
+        "linesAdded": 2125,
+        "message": "Merge: combine user management and team members features",
+        "linesRemoved": 8,
+        "author": "Steven Robijns",
+        "sha": "38c0a5e"
+      },
+      "totalCommits": 17,
+      "tests": {
+        "backend": 71,
+        "frontend": 59,
+        "e2e": 4
+      },
+      "totalLinesRemoved": 89,
+      "totalLinesAdded": 12832
+    },
+    "Emerald": {
+      "people": {
+        "Bernard Giorgino": {
+          "commits": 12,
+          "linesAdded": 4632,
+          "prs": 0,
+          "linesRemoved": 19
+        },
+        "Gert Claeskens": {
+          "commits": 1,
+          "linesAdded": 650,
+          "prs": 1,
+          "linesRemoved": 3
+        },
+        "YannickProgKeuning": {
+          "commits": 5,
+          "linesAdded": 1993,
+          "prs": 5,
+          "linesRemoved": 328
+        },
+        "Remco Verbruggen": {
+          "commits": 5,
+          "linesAdded": 2142,
+          "prs": 0,
+          "linesRemoved": 34
+        },
+        "bvervaele": {
+          "commits": 12,
+          "linesAdded": 11305,
+          "prs": 12,
+          "linesRemoved": 180
+        },
+        "Bert Vervaele": {
+          "commits": 3,
+          "linesAdded": 1582,
+          "prs": 0,
+          "linesRemoved": 14
+        },
+        "GertClaeskensJidoka": {
+          "commits": 20,
+          "linesAdded": 15750,
+          "prs": 0,
+          "linesRemoved": 642
+        },
+        "remcoverbruggen-itenium": {
+          "commits": 6,
+          "linesAdded": 10553,
+          "prs": 5,
+          "linesRemoved": 48
+        },
+        "BGiorgino": {
+          "commits": 2,
+          "linesAdded": 1006,
+          "prs": 2,
+          "linesRemoved": 0
+        },
+        "Yannick Manfroy": {
+          "commits": 18,
+          "linesAdded": 11757,
+          "prs": 0,
+          "linesRemoved": 400
+        }
+      },
+      "biggestCommit": {
+        "linesAdded": 4868,
+        "message": "Merge branch \u0027master\u0027 into testing/skills",
+        "linesRemoved": 35,
+        "author": "remcoverbruggen-itenium",
+        "sha": "959e71f"
+      },
+      "totalCommits": 84,
+      "tests": {
+        "backend": 240,
+        "frontend": 212,
+        "e2e": 4
+      },
+      "totalLinesRemoved": 1668,
+      "totalLinesAdded": 61370
+    },
+    "MidnightBlue": {
+      "people": {
+        "Nicolas": {
+          "commits": 2,
+          "linesAdded": 1380,
+          "prs": 2,
+          "linesRemoved": 46
+        },
+        "JoachimDhondtItenium": {
+          "commits": 3,
+          "linesAdded": 9514,
+          "prs": 3,
+          "linesRemoved": 62
+        },
+        "Nicolas Legrand": {
+          "commits": 10,
+          "linesAdded": 12268,
+          "prs": 0,
+          "linesRemoved": 147
+        },
+        "Jos": {
+          "commits": 1,
+          "linesAdded": 86,
+          "prs": 0,
+          "linesRemoved": 0
+        },
+        "Joachim D\u0027hondt": {
+          "commits": 4,
+          "linesAdded": 2354,
+          "prs": 0,
+          "linesRemoved": 55
+        }
+      },
+      "biggestCommit": {
+        "linesAdded": 6896,
+        "message": "Merge pull request #5 from itenium-be/nicolas/mvp",
+        "linesRemoved": 7,
+        "author": "JoachimDhondtItenium",
+        "sha": "a2b9fe3"
+      },
+      "totalCommits": 20,
+      "tests": {
+        "backend": 72,
+        "frontend": 36,
+        "e2e": 4
+      },
+      "totalLinesRemoved": 310,
+      "totalLinesAdded": 25602
+    },
+    "RoyalPurple": {
+      "people": {
+        "Mikedonna": {
+          "commits": 2,
+          "linesAdded": 1392,
+          "prs": 1,
+          "linesRemoved": 10
+        },
+        "borosseel": {
+          "commits": 2,
+          "linesAdded": 1332,
+          "prs": 2,
+          "linesRemoved": 29
+        },
+        "joriswijnant-ctrl": {
+          "commits": 7,
+          "linesAdded": 8154,
+          "prs": 4,
+          "linesRemoved": 92
+        },
+        "Tim Ranson": {
+          "commits": 20,
+          "linesAdded": 7688,
+          "prs": 1,
+          "linesRemoved": 780
+        },
+        "Mike D": {
+          "commits": 2,
+          "linesAdded": 80,
+          "prs": 0,
+          "linesRemoved": 3
+        },
+        "Joris Wijnant": {
+          "commits": 15,
+          "linesAdded": 23704,
+          "prs": 0,
+          "linesRemoved": 524
+        },
+        "Thomas De Brauwer": {
+          "commits": 7,
+          "linesAdded": 3217,
+          "prs": 0,
+          "linesRemoved": 178
+        },
+        "Bo Rosseel": {
+          "commits": 10,
+          "linesAdded": 6474,
+          "prs": 0,
+          "linesRemoved": 186
+        },
+        "Thomas DB": {
+          "commits": 7,
+          "linesAdded": 7445,
+          "prs": 5,
+          "linesRemoved": 167
+        }
+      },
+      "biggestCommit": {
+        "linesAdded": 8892,
+        "message": "fix: improve feedback list item readability when selected",
+        "linesRemoved": 326,
+        "author": "Joris Wijnant",
+        "sha": "fcc08a4"
+      },
+      "totalCommits": 72,
+      "tests": {
+        "backend": 144,
+        "frontend": 67,
+        "e2e": 4
+      },
+      "totalLinesRemoved": 1969,
+      "totalLinesAdded": 59486
+    },
+    "Obsidian": {
+      "people": {
+        "Jochem": {
+          "commits": 7,
+          "linesAdded": 2739,
+          "prs": 7,
+          "linesRemoved": 31
+        },
+        "TimoVersonnen": {
+          "commits": 4,
+          "linesAdded": 5016,
+          "prs": 4,
+          "linesRemoved": 43
+        },
+        "JochemVH1": {
+          "commits": 14,
+          "linesAdded": 2952,
+          "prs": 0,
+          "linesRemoved": 61
+        },
+        "TimoItenium": {
+          "commits": 10,
+          "linesAdded": 7815,
+          "prs": 0,
+          "linesRemoved": 134
+        }
+      },
+      "biggestCommit": {
+        "linesAdded": 3330,
+        "message": "feat: Add Skill Catalogue and Consultant Progress features",
+        "linesRemoved": 3,
+        "author": "TimoItenium",
+        "sha": "c51f0d4"
+      },
+      "totalCommits": 35,
+      "tests": {
+        "backend": 77,
+        "frontend": 69,
+        "e2e": 4
+      },
+      "totalLinesRemoved": 269,
+      "totalLinesAdded": 18522
+    }
+  },
+  "generatedAt": "2026-03-22T14:45:41.8156973+01:00"
+}
