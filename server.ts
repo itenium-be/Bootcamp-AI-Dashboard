@@ -73,6 +73,8 @@ interface MetricsSnapshot {
 const METRICS_HISTORY_FILE = import.meta.dir + '/metrics-history.json';
 const TEAM_NAMES_FILE = import.meta.dir + '/team-names.json';
 const DATA_CACHE_FILE = import.meta.dir + '/data-cache.json';
+const FINAL_CACHE_FILE = import.meta.dir + '/final-cache.json';
+const FINAL_TOKENS_FILE = import.meta.dir + '/final-cache-tokens.json';
 
 let teamNamesMapping: Record<string, string> = {};
 
@@ -120,6 +122,34 @@ async function loadDataCache(): Promise<{ teams: any[]; tokenUsage: any[] } | nu
     if (file.size > 0) {
       const data = JSON.parse(await file.text());
       console.log('Loaded data cache from disk');
+      return data;
+    }
+  } catch {
+    // File doesn't exist yet or is invalid
+  }
+  return null;
+}
+
+async function loadFinalCache(): Promise<any | null> {
+  try {
+    const file = Bun.file(FINAL_CACHE_FILE);
+    if (await file.exists() && file.size > 0) {
+      const data = JSON.parse(await file.text());
+      console.log('Loaded final cache from disk');
+      return data;
+    }
+  } catch {
+    // File doesn't exist yet or is invalid
+  }
+  return null;
+}
+
+async function loadFinalTokens(): Promise<any[] | null> {
+  try {
+    const file = Bun.file(FINAL_TOKENS_FILE);
+    if (await file.exists() && file.size > 0) {
+      const data = JSON.parse(await file.text());
+      console.log('Loaded final tokens from disk');
       return data;
     }
   } catch {
@@ -540,6 +570,111 @@ const server = Bun.serve({
     // Main API endpoint - returns all data (cached for 30s)
     if (url.pathname === "/api/data") {
       try {
+        // Check for final cache first - if present, serve final standings instead of live data
+        const finalCache = await loadFinalCache();
+        if (finalCache) {
+          console.log("Serving final cache data");
+          // Transform final-cache format to match data-cache format expected by UI
+          const teams = REPOS.map(repoInfo => {
+            const teamData = finalCache.teams?.[repoInfo.name] || {};
+            const tests = teamData.tests || {};
+            const people = teamData.people || {};
+            const biggestCommit = teamData.biggestCommit;
+            const firstCommit = teamData.firstCommit;
+
+            // Generate allCommits for commit counts + first commit date
+            const allCommits: any[] = Object.entries(people).flatMap(([author, stats]: [string, any]) =>
+              Array(stats.commits || 0).fill({ author, authorHandle: author, avatarUrl: null, date: null })
+            );
+            // Add first commit with actual date
+            if (firstCommit?.date) {
+              allCommits.push({
+                author: firstCommit.author,
+                authorHandle: firstCommit.author,
+                avatarUrl: null,
+                date: firstCommit.date,
+              });
+            }
+
+            // Generate allCommitStats for churn per person + biggest commit
+            const allCommitStats: any[] = Object.entries(people).map(([author, stats]: [string, any]) => ({
+              author,
+              authorHandle: author,
+              avatarUrl: null,
+              date: null,
+              message: '',
+              additions: stats.linesAdded || 0,
+              deletions: stats.linesRemoved || 0,
+            }));
+            if (biggestCommit) {
+              allCommitStats.push({
+                author: biggestCommit.author,
+                authorHandle: biggestCommit.author,
+                avatarUrl: null,
+                date: null,
+                message: biggestCommit.message,
+                additions: biggestCommit.linesAdded || 0,
+                deletions: biggestCommit.linesRemoved || 0,
+              });
+            }
+
+            // Generate mergedPRs array for Most PRs
+            const mergedPRs = Object.entries(people).flatMap(([author, stats]: [string, any]) =>
+              Array(stats.prs || 0).fill({ author })
+            );
+
+            return {
+              ...repoInfo,
+              commits: [],
+              allCommits,
+              allCommitStats,
+              openIssues: [],
+              openIssuesCount: 0,
+              closedIssuesCount: 0,
+              allIssues: [],
+              openPRs: [],
+              openPRsCount: 0,
+              mergedPRs,
+              mergedPRsCount: mergedPRs.length,
+              lastPush: null,
+              buildStatus: 'success',
+              testResults: {
+                backend: { passed: tests.backend || 0, failed: 0 },
+                frontend: {
+                  unit: { passed: tests.frontend || 0, failed: 0 },
+                  e2e: { passed: tests.e2e || 0, failed: 0 }
+                }
+              },
+              contributorStats: Object.entries(people).map(([login, stats]: [string, any]) => ({
+                login,
+                additions: stats.linesAdded || 0,
+                deletions: stats.linesRemoved || 0,
+              })),
+              totalCommits: teamData.totalCommits || 0,
+              totalLinesAdded: teamData.totalLinesAdded || 0,
+              totalLinesDeleted: teamData.totalLinesRemoved || 0,
+              error: null,
+            };
+          });
+
+          // Load final token usage
+          const finalTokens = await loadFinalTokens() || [];
+          // Convert cost to tokenUsage format (use cost * 1000 as fake token count for display)
+          const tokenUsage = finalTokens.map((t: any) => ({
+            name: t.name,
+            input: Math.round(t.cost * 500),  // Split cost into input/output for compatibility
+            output: Math.round(t.cost * 500),
+            cost: t.cost,
+          }));
+
+          return new Response(JSON.stringify({ teams, tokenUsage }), {
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+          });
+        }
+
         const now = Date.now();
         const cacheStale = !cachedData || now - cacheTimestamp > CACHE_TTL_MS;
         const backingOff = now < rateLimitedUntil;
